@@ -90,7 +90,10 @@
       "hook": "A fantasy football auto-battler. Build a roster, call plays against reads you can't see, and watch it play out.",
       "draft": false,
       "headline": null,
-      "clips": [{ "poster": "assets/previews/lock.webp", "focus": "58% 30%", "alt": "Team Lock: the wide receiver, falling right, reaches one-handed for the ball." }],
+      "clips": [
+        { "poster": "assets/previews/lock.webp", "focus": "58% 30%", "alt": "Team Lock: the wide receiver, falling right, reaches one-handed for the ball." },
+        { "src": "assets/demos/lock-locked-phone.mp4", "poster": "assets/previews/lock-locked-phone.webp", "alt": "Team Lock storyboard: the whole lineup lights up and links, then LOCKED IN over the roll call." }
+      ],
       "built": {
         "stack": "A Python paper-game simulator, a PixiJS v8 animation engine, and a ComfyUI art pipeline.",
         "points": [

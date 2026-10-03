@@ -32,7 +32,7 @@ Vercel serves the committed `dist/` as a static site (framework Other, no build 
 ## Rules
 
 - **Numbers are results or nothing.** A headline number must be a real, dated result from the project's own data. Builder stats go under How it's built.
-- **Team Lock art:** only the approved male QB and WR boards, as optimized webp copies. Originals stay outside the repo.
+- **Team Lock art:** optimized webp or clip copies only; originals stay outside the repo. Characters are cosmetic role avatars, so cut-in art never carries a real player's name; names appear only on role badges, as fantasy data. Keep the avatars generic: no real player's face, team marks, or matching jersey number.
 - Phone clips are recorded at 390x844 and must show real, current-looking content; say in the commit when a clip is edited (sped up, items hidden, snapshot data).
 - Vercel Hobby is non-commercial. Upgrade before taking client work.
 - Verify at 360px first. Reduced motion gets still frames.

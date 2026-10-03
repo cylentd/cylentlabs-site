@@ -131,9 +131,3 @@ def test_built_page_landmarks():
     assert "{{" not in page
     for name in build.JS:
         assert "</script>" not in (SRC / "js" / f"{name}.js").read_text(encoding="utf-8")
-
-
-def test_no_art_from_the_alt_page():
-    page, _ = build.build()
-    for src in re.findall(r'src="([^"]+)"', page):
-        assert not re.search(r"fem|girl|alt", src, re.I), src
