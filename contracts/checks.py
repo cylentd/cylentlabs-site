@@ -1,12 +1,14 @@
 """Shape checks where data enters the build. A missing field fails the build, not the page."""
+import re
 
 SHAPE_IDS = {"jarvis", "teamwatch", "tcg", "seat", "lock"}  # one per shape in design/src/js/shapes.js
 COPY_KEYS = {
     "site": {"title", "description", "skip"},
     "hero": {"wordmark", "name", "email_label", "github_label", "linkedin_label", "names_label", "quote"},
     "rail": {"label"},
+    "lab": {"nav", "intro", "empty", "index_title", "description", "back", "home", "draft"},
     "card": {"use", "how", "in_design"},
-    "foot": {"line", "to_top"},
+    "foot": {"to_top"},
 }
 
 
@@ -47,6 +49,20 @@ def check_projects(data):
             need({"text", "at", "lit"} <= set(lb) and 0 <= lb["at"] <= 100, f"projects.json: {pid}.motif_labels need text, at 0-100, lit")
         bt = p.get("built")
         need(bt is None or {"stack", "points"} <= set(bt), f"projects.json: {pid}.built needs stack and points")
+
+
+SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+
+
+def check_posts(posts):
+    """Lab notes: each needs a title, an ISO date, a summary, a draft flag and a URL-safe file name."""
+    for p in posts:
+        slug = p["slug"]
+        need(SLUG.fullmatch(slug), f"data/lab/{slug}.md: file name must be lowercase words joined by hyphens")
+        for k in ("title", "date", "summary"):
+            need(isinstance(p.get(k), str) and p[k], f"data/lab/{slug}.md: missing {k!r}")
+        need(re.fullmatch(r"\d{4}-\d{2}-\d{2}", p["date"]), f"data/lab/{slug}.md: date must be YYYY-MM-DD")
+        need(isinstance(p.get("draft"), bool), f"data/lab/{slug}.md: draft must be true or false")
 
 
 def drafts(data):

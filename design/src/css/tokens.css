@@ -35,6 +35,8 @@
   --space-5: 72px;
   --space-6: 120px;
   --radius: 14px;
+  /* the header and footer rows stop growing here and centre, so a very wide window doesn't push them to its edges */
+  --bar-max: 1280px;
 
   /* sizes: the showcase is always the biggest thing in a chapter; the motif above it stays smaller */
   --show-w: 300px;

@@ -2,7 +2,8 @@
    .helix__stage; helix.js places each name beside its rung group and marks the box .is-placed. */
 .hero { min-height: 94svh; display: flex; flex-direction: column; padding: var(--space-3) var(--gutter) var(--space-2); }
 .hero__bar {
-  display: flex; justify-content: space-between; align-items: center; gap: var(--space-2);
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0 var(--space-2);
+  width: 100%; max-width: var(--bar-max); margin-inline: auto;
   font-size: var(--step--1); color: var(--ink-dim);
 }
 .hero__mark { margin: 0; font: inherit; color: var(--ink); }

@@ -64,13 +64,14 @@
 .btn--use { background: var(--ember); border-color: var(--ember); color: var(--bg); }
 .btn--use:hover { background: var(--ember-soft); border-color: var(--ember-soft); color: var(--bg); }
 
-/* footer: one row. The wordmark (a link back to the top) with the sign-off beside it on the left, contacts on the right */
+/* footer: one row, kept minimal and laid out like the header. The wordmark (a link back to the top) and lab notes on
+   the left, contacts on the right */
 .foot { position: relative; padding: var(--space-2) var(--gutter); background: var(--bg); border-top: 1px solid var(--line); }
-.foot__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); max-width: 1040px; margin: 0 auto; font-size: var(--step--1); }
+.foot__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); max-width: var(--bar-max); margin: 0 auto; font-size: var(--step--1); }
 .foot__mark { color: var(--ink); text-decoration: none; }
 .foot__mark:hover { color: var(--ember-soft); }
-/* the sign-off answers the hero's line; its auto right margin pushes the contacts to the far side */
-.foot__line { margin: 0 auto 0 0; font: italic 400 var(--step-0) / 1.3 var(--font-display); color: var(--ink-dim); }
+/* the contacts' auto left margin pushes them to the far side, with or without the lab link before them */
+.foot__row .contact { margin-left: auto; }
 
 /* back to top: a round button in the corner, shown by totop.js between the hero and the footer */
 html { scroll-behavior: smooth; }

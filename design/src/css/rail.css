@@ -40,7 +40,8 @@ body[data-active="hero"] .rail { opacity: 0; visibility: hidden; }
 
 /* wide screen: no pill, the list sits in the left margin, centred on the screen's height */
 @media (min-width: 1100px) {
-  .rail { bottom: auto; top: 50%; transform: translateY(-50%); }
+  /* left edge follows the header's: the gutter, or the margin beside the capped header row on a very wide window */
+  .rail { bottom: auto; top: 50%; transform: translateY(-50%); left: max(var(--gutter), calc((100% - var(--bar-max)) / 2)); }
   .rail__pill { display: none; }
   .rail .rail__list, .rail__pill[aria-expanded="false"] + .rail__list {
     display: block; position: static; padding: 0; border: 0; background: none;

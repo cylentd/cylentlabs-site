@@ -23,7 +23,10 @@
 <main>
   <header class="hero" id="top" data-stop="hero">
     <div class="hero__bar">
-      <h1 class="hero__mark">{{hero.wordmark}}</h1>
+      <div class="hero__left">
+        <h1 class="hero__mark">{{hero.wordmark}}</h1>
+        <a class="lablink" href="/lab/">{{lab.nav}}</a>
+      </div>
       {{contact_links}}
     </div>
     <p class="hero__quote">{{hero.quote}}</p>
@@ -38,7 +41,7 @@
   <footer class="foot">
     <div class="foot__row">
       <a class="foot__mark" href="#top">{{hero.wordmark}}</a>
-      <p class="foot__line">{{foot.line}}</p>
+      <a class="lablink" href="/lab/">{{lab.nav}}</a>
       {{contact_links}}
     </div>
   </footer>

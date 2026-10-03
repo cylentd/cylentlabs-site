@@ -16,13 +16,22 @@
   "rail": {
     "label": "Projects"
   },
+  "lab": {
+    "nav": "lab notes",
+    "intro": "what's cooking, what burned, and why.",
+    "empty": "First note coming soon.",
+    "index_title": "lab notes",
+    "description": "Lab notes from cylent labs: building and running live tools with coding agents.",
+    "back": "All notes",
+    "home": "cylent labs",
+    "draft": "Draft"
+  },
   "card": {
     "use": "Use it",
     "how": "How it's built",
     "in_design": "In design"
   },
   "foot": {
-    "line": "still cooking.",
     "to_top": "Back to top"
   }
 }

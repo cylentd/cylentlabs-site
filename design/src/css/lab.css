@@ -1,0 +1,42 @@
+/* The lab: its link in the home page's header and footer (.lablink), the notes index and each note (.labpage).
+   Reading pages, so one narrow column of plain text: no field, no motifs. */
+.hero__left { display: flex; align-items: baseline; gap: var(--space-3); }
+.lablink { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-dim); text-decoration: none; transition: color var(--t-fast); }
+.lablink:hover { color: var(--ember-soft); }
+
+.lab__h1 { margin: 0; font: 400 var(--step-3) / 1 var(--font-display); }
+.lab__intro { margin: var(--space-2) 0 0; font-size: var(--step-1); color: var(--ink-dim); text-wrap: balance; }
+.lab__empty { margin: var(--space-4) 0; padding: var(--space-2) 0; border-block: 1px solid var(--line); color: var(--ink-dim); }
+
+.lab__list { margin: var(--space-4) 0; padding: 0; list-style: none; }
+.lab__list li { padding: var(--space-2) 0; border-top: 1px solid var(--line); }
+.lab__list li:last-child { border-bottom: 1px solid var(--line); }
+.lab__list a { text-decoration: none; }
+.lab__title { font: 400 var(--step-2) / 1.1 var(--font-display); }
+.lab__list a:hover .lab__title { color: var(--ember-soft); }
+.lab__list time { display: block; margin-top: var(--space-1); font-size: var(--step--1); color: var(--ink-dim); }
+.lab__list p { margin: var(--space-1) 0 0; color: var(--ink-dim); }
+.lab__tag {
+  display: inline-block; margin-left: var(--space-1); padding: 0 var(--space-1); vertical-align: middle;
+  border: 1px solid var(--line); border-radius: 999px; font: 400 var(--step--1) / 1.6 var(--font-body); color: var(--ember-soft);
+}
+
+/* the notes index and a note: their own pages */
+/* the bar carries its own gutter here, so its cap grows by two gutters to line up with the home page's */
+.labpage__bar { padding: var(--space-3) var(--gutter) 0; max-width: calc(var(--bar-max) + 2 * var(--gutter)); }
+.labpage__bar .hero__mark { text-decoration: none; }
+.labpage__body { width: min(100% - 2 * var(--gutter), 40rem); margin: 0 auto; padding: var(--space-5) 0 var(--space-6); }
+
+.note__back { display: inline-flex; align-items: center; min-height: 44px; margin-bottom: var(--space-2); font-size: var(--step--1); color: var(--ink-dim); text-decoration: none; }
+.note__back::before { content: "\2190\00a0"; }
+.note__back:hover { color: var(--ember-soft); }
+.note__meta { margin: var(--space-2) 0 var(--space-4); font-size: var(--step--1); color: var(--ink-dim); }
+.note h2 { margin: var(--space-5) 0 var(--space-2); font: 400 var(--step-2) / 1.1 var(--font-display); }
+.note h3 { margin: var(--space-4) 0 var(--space-1); font-size: var(--step-1); }
+.note p, .note ul { margin: 0 0 var(--space-2); }
+.note li + li { margin-top: var(--space-1); }
+.note li::marker { color: var(--ember); }
+.note a { color: var(--ember-soft); }
+.note code { font-size: 0.9em; padding: 0.1em 0.35em; border-radius: 4px; background: var(--bg-lift); }
+.note pre { margin: 0 0 var(--space-2); padding: var(--space-2); overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-lift); }
+.note pre code { padding: 0; background: none; }
