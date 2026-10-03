@@ -111,6 +111,25 @@
   --tap-time: 300ms;
   --wake-trail-gap: 0.6;
   --wake-max: 12;
+  /* the hover's bow wave (mouse only), only while the cursor moves: at bow-speed px per 60th of a second it is full
+     size and strength, stretched along the motion; slower, it shrinks toward bow-still of its size and fades, and a
+     parked cursor leaves no dent. bow-ease: how fast it turns and fades, per frame. bow-depth: how far it moves the
+     dots it covers, as a fraction of its size, at full speed. */
+  --bow-speed: 12;
+  --bow-still: 0.55;
+  --bow-ease: 0.25;
+  --bow-depth: 0.6;
+  /* flick to spin the helix (helix.js). sens: rad/s for a swipe of one stage width per second, so a phone and a
+     desktop feel alike; 12 keeps the near side about under the pointer (the helix's radius is ~1/15 of the stage).
+     cap: the fastest spin, rad/s. Screenshots 2026-10-03, worst moment just after a flick: desktop 4 thick strands,
+     6 a cloud; the sparser phone helix 2.5 crisp, 3.2 loose but a helix, 4 a cloud.
+     coast: the released spin's decay time constant; from the cap it fades into the resting turn in about 5 s
+     (doubled from 750ms on 2026-10-03: David wanted a longer, fidget-spinner coast).
+     window: the ms of the drag's end that set the release speed. */
+  --spin-sens: 12;
+  --spin-cap: 3.2;
+  --spin-coast: 1500ms;
+  --spin-window: 100;
 }
 
 @media (min-width: 900px) {
@@ -191,7 +210,9 @@ body > header, main, body > footer { position: relative; z-index: 1; }
 
 .helix { position: relative; flex: 1; width: min(100%, 1280px); margin: 0 auto; display: flex; flex-direction: column; }
 .helix__stage { flex: 1; min-height: 320px; touch-action: pan-y; cursor: grab; }
-.helix__stage:active { cursor: grabbing; }
+/* while a mouse spins it (helix.js), the grab follows the pointer off the stage and no text gets selected */
+.is-spinning, .is-spinning * { cursor: grabbing !important; user-select: none; }
+@media (prefers-reduced-motion: reduce) { .helix__stage { cursor: auto; } } /* it stays still, so nothing to grab */
 .helix__names { font-size: var(--step--1); }
 .helix__names a { padding: 12px 4px; color: var(--hue); text-decoration: none; white-space: nowrap; }
 .helix__names a:hover, .helix__names a.is-reading { text-decoration: underline; text-underline-offset: 4px; }

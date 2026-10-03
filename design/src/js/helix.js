@@ -1,6 +1,6 @@
 /* Hero: a turning double helix in 3D, standing upright and tilted. It is yawed, pitched and rolled, then projected
    with perspective, so its near end is larger and brighter than its far end. One rung group per project glows in its
-   hue, and each project's name sits to the right of its group. Dragging across the stage with a mouse spins it.
+   hue, and each project's name sits to the right of its group. A sideways drag or flick, by mouse or finger, spins it.
    Every CYCLE seconds a replication fork runs its length; on the way to the first chapter it unzips, far end first. */
 window.LAB = window.LAB || {};
 (() => {
@@ -12,6 +12,25 @@ window.LAB = window.LAB || {};
   // whole; at it the strands peel apart and the rungs pull back into them; behind it they zip up again.
   const CYCLE = 16, RUN = 9, FORK = 0.09;
   let m = 0, u, side, frac, jx, nR = 1, phase = 0, spin = 0, last = 0, view = null;
+  // spin: extra turn in rad per wall-clock second, positive turns the near side to the right
+  let held = null, FLICK = null, wall = 0; // the press spinning it now; the flick tokens; the last step's wall clock
+
+  // pure rules, kept apart from the DOM so tests can run them
+  L.helixRules = {
+    // the pointer's sideways speed in px/s over its last `win` ms, up to `now`: a pointer that stopped reads 0
+    velocity(pts, now, win) {
+      const recent = pts.filter((p) => p.t >= now - win);
+      if (recent.length < 2) return 0;
+      const a = recent[0], b = recent[recent.length - 1], ms = Math.max(now - a.t, 8);
+      return ((b.x - a.x) / ms) * 1000;
+    },
+    // px/s to rad/s: a swipe across the whole stage in one second turns it `sens` radians, on any screen size,
+    // capped so the dots' springs never lag into a cloud
+    spinRate: (pxPerS, width, sens, cap) => (width > 0 ? Math.max(-cap, Math.min(cap, (pxPerS / width) * sens)) : 0),
+    // a released spin decays exponentially with time constant `tau` seconds
+    coast: (w, dt, tau) => w * Math.exp(-dt / tau),
+  };
+  const rate = (h, now) => L.helixRules.spinRate(L.helixRules.velocity(h.pts, now, FLICK.win), h.w, FLICK.sens, FLICK.cap);
 
   // local coordinates: `along` the axis (top to bottom), `across` it, `deep` toward the viewer
   function rotate(v, along, across, deep) {
@@ -102,7 +121,10 @@ window.LAB = window.LAB || {};
     step(P, c, t) {
       if (!m) return;
       const dt = Math.min(0.05, Math.max(0, t - last)); last = t;
-      phase += (0.2 + spin) * dt; spin *= Math.pow(0.08, dt);
+      const now = performance.now(), dw = Math.min(0.05, Math.max(0, (now - wall) / 1000)); wall = now;
+      if (held) spin = rate(held, now); // held: it follows the pointer
+      else if (spin) spin = Math.abs(spin) < 0.01 ? 0 : L.helixRules.coast(spin, dw, FLICK.tau);
+      phase += 0.2 * dt + spin * dw;
       const v = view, k = TAU * v.turns / v.len, G = L.HUES.length;
       const fork = -0.15 + ((t % CYCLE) / RUN) * 1.3; // past 1.15 it has left the helix until the next cycle
       reading(fork, G);
@@ -130,17 +152,36 @@ window.LAB = window.LAB || {};
     },
   };
 
-  // a drag spins it; the spin eases back to the resting turn. On a touch screen the stage is pan-y, so an up-or-down
-  // swipe goes to the browser to scroll (pointercancel) and only a sideways swipe spins it.
+  // Flick to spin. While held, the helix turns at the pointer's sideways speed (its last FLICK.win ms), so it feels
+  // attached; on release it keeps that speed and coasts down like a fidget spinner. On a touch screen the stage is
+  // pan-y, so an up-or-down swipe goes to the browser to scroll (pointercancel) and only a sideways swipe spins it.
+  L.helixState = () => ({ spin, phase, held: !!held }); // read-only, for tests and the browser checks
   const stage = document.querySelector(".helix__stage");
   if (!stage || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  let down = null;
-  stage.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });
-  addEventListener("pointermove", (e) => {
-    if (!down) return;
-    spin += ((e.clientX - down.x) + (e.clientY - down.y)) * 0.012;
-    spin = Math.max(-2.5, Math.min(2.5, spin)); // faster and the dots' springs lag into a cloud
-    down = { x: e.clientX, y: e.clientY };
+  const css = getComputedStyle(document.documentElement), num = (n) => parseFloat(css.getPropertyValue(n));
+  FLICK = { sens: num("--spin-sens"), cap: num("--spin-cap"), tau: num("--spin-coast") / 1000, win: num("--spin-window") };
+  const root = document.documentElement, noSelect = (e) => e.preventDefault();
+  stage.addEventListener("pointerdown", (e) => {
+    if (e.button) return; // the main button or a finger only
+    held = { id: e.pointerId, w: stage.clientWidth, pts: [{ t: e.timeStamp, x: e.clientX }] };
+    if (e.pointerType === "mouse") { // a mouse drag must not select text or start a native drag on the names
+      e.preventDefault(); stage.setPointerCapture(e.pointerId);
+      root.classList.add("is-spinning"); addEventListener("selectstart", noSelect);
+    }
+  });
+  stage.addEventListener("pointermove", (e) => {
+    if (!held || e.pointerId !== held.id) return;
+    held.pts.push({ t: e.timeStamp, x: e.clientX });
+    if (held.pts.length > 32) held.pts.shift();
   }, { passive: true });
-  for (const ev of ["pointerup", "pointercancel"]) addEventListener(ev, () => { down = null; });
+  const release = (e) => {
+    if (!held || e.pointerId !== held.id) return;
+    // a flick keeps the speed it was released at; a held-still release, none; a cancel (the page scrolled), none
+    if (e.type === "pointerup") held.pts.push({ t: e.timeStamp, x: e.clientX });
+    spin = e.type === "pointerup" ? rate(held, e.timeStamp) : 0;
+    held = null;
+    root.classList.remove("is-spinning"); removeEventListener("selectstart", noSelect);
+  };
+  stage.addEventListener("pointerup", release);
+  stage.addEventListener("pointercancel", release);
 })();

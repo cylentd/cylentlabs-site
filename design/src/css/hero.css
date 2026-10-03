@@ -27,7 +27,9 @@
 
 .helix { position: relative; flex: 1; width: min(100%, 1280px); margin: 0 auto; display: flex; flex-direction: column; }
 .helix__stage { flex: 1; min-height: 320px; touch-action: pan-y; cursor: grab; }
-.helix__stage:active { cursor: grabbing; }
+/* while a mouse spins it (helix.js), the grab follows the pointer off the stage and no text gets selected */
+.is-spinning, .is-spinning * { cursor: grabbing !important; user-select: none; }
+@media (prefers-reduced-motion: reduce) { .helix__stage { cursor: auto; } } /* it stays still, so nothing to grab */
 .helix__names { font-size: var(--step--1); }
 .helix__names a { padding: 12px 4px; color: var(--hue); text-decoration: none; white-space: nowrap; }
 .helix__names a:hover, .helix__names a.is-reading { text-decoration: underline; text-underline-offset: 4px; }

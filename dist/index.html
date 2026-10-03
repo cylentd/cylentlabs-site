@@ -111,6 +111,25 @@
   --tap-time: 300ms;
   --wake-trail-gap: 0.6;
   --wake-max: 12;
+  /* the hover's bow wave (mouse only), only while the cursor moves: at bow-speed px per 60th of a second it is full
+     size and strength, stretched along the motion; slower, it shrinks toward bow-still of its size and fades, and a
+     parked cursor leaves no dent. bow-ease: how fast it turns and fades, per frame. bow-depth: how far it moves the
+     dots it covers, as a fraction of its size, at full speed. */
+  --bow-speed: 12;
+  --bow-still: 0.55;
+  --bow-ease: 0.25;
+  --bow-depth: 0.6;
+  /* flick to spin the helix (helix.js). sens: rad/s for a swipe of one stage width per second, so a phone and a
+     desktop feel alike; 12 keeps the near side about under the pointer (the helix's radius is ~1/15 of the stage).
+     cap: the fastest spin, rad/s. Screenshots 2026-10-03, worst moment just after a flick: desktop 4 thick strands,
+     6 a cloud; the sparser phone helix 2.5 crisp, 3.2 loose but a helix, 4 a cloud.
+     coast: the released spin's decay time constant; from the cap it fades into the resting turn in about 5 s
+     (doubled from 750ms on 2026-10-03: David wanted a longer, fidget-spinner coast).
+     window: the ms of the drag's end that set the release speed. */
+  --spin-sens: 12;
+  --spin-cap: 3.2;
+  --spin-coast: 1500ms;
+  --spin-window: 100;
 }
 
 @media (min-width: 900px) {
@@ -191,7 +210,9 @@ body > header, main, body > footer { position: relative; z-index: 1; }
 
 .helix { position: relative; flex: 1; width: min(100%, 1280px); margin: 0 auto; display: flex; flex-direction: column; }
 .helix__stage { flex: 1; min-height: 320px; touch-action: pan-y; cursor: grab; }
-.helix__stage:active { cursor: grabbing; }
+/* while a mouse spins it (helix.js), the grab follows the pointer off the stage and no text gets selected */
+.is-spinning, .is-spinning * { cursor: grabbing !important; user-select: none; }
+@media (prefers-reduced-motion: reduce) { .helix__stage { cursor: auto; } } /* it stays still, so nothing to grab */
 .helix__names { font-size: var(--step--1); }
 .helix__names a { padding: 12px 4px; color: var(--hue); text-decoration: none; white-space: nowrap; }
 .helix__names a:hover, .helix__names a.is-reading { text-decoration: underline; text-underline-offset: 4px; }
@@ -475,7 +496,7 @@ body[data-active="hero"] .rail { opacity: 0; visibility: hidden; }
     <div class="chapter__shows" data-count="2"><figure class="chapter__show"><video class="chapter__demo" src="assets/demos/teamwatch-phone.mp4" poster="assets/previews/teamwatch-phone.webp" width="390" height="844" muted loop playsinline preload="none" aria-label="Team Watch on a phone: Jahmyr Gibbs&#x27;s profile, where tapping his stat sphere opens it into a radar of his RB ranks."></video><button type="button" class="chapter__pause" aria-pressed="false" aria-label="Pause clip" hidden><span aria-hidden="true"></span></button></figure><figure class="chapter__show"><video class="chapter__demo" src="assets/demos/teamwatch-pack-phone.mp4" poster="assets/previews/teamwatch-pack-phone.webp" width="390" height="844" muted loop playsinline preload="none" aria-label="Team Watch on a phone: the week&#x27;s roster pack tears open and the cards come out, worst first, best last."></video><button type="button" class="chapter__pause" aria-pressed="false" aria-label="Pause clip" hidden><span aria-hidden="true"></span></button></figure></div>
     <div class="chapter__text">
       
-      <div class="chapter__links"><a class="btn btn--use" href="https://team-watch-three.vercel.app">Use it</a><button type="button" class="btn chapter__how" aria-expanded="false" aria-controls="built-teamwatch">How it&#x27;s built</button></div>
+      <div class="chapter__links"><a class="btn btn--use" href="https://teamwatch.cylentlabs.com">Use it</a><button type="button" class="btn chapter__how" aria-expanded="false" aria-controls="built-teamwatch">How it&#x27;s built</button></div>
       <div class="chapter__built" id="built-teamwatch" hidden><p class="chapter__stack">A Python build step makes one inlined HTML page from ff-jarvis&#x27;s data, rebuilt three times a day, on Vercel.</p><ul><li>Start/sit calls are graded every week, in public, against FantasyPros and Pitcher List.</li><li>The stat sphere is the player&#x27;s season ranks drawn as a crystal; a tap unfolds it into a flat radar.</li><li>Tests are mapped to the views they touch. A CSS change runs about 14 seconds of tests instead of the full 65.</li></ul></div>
     </div>
   </section>
@@ -488,7 +509,7 @@ body[data-active="hero"] .rail { opacity: 0; visibility: hidden; }
     <div class="chapter__shows" data-count="1"><figure class="chapter__show"><video class="chapter__demo" src="assets/demos/tcg-phone.mp4" poster="assets/previews/tcg-phone.webp" width="390" height="844" muted loop playsinline preload="none" aria-label="Restock Watch on a phone: the status page and its price tiles."></video><button type="button" class="chapter__pause" aria-pressed="false" aria-label="Pause clip" hidden><span aria-hidden="true"></span></button></figure></div>
     <div class="chapter__text">
       
-      <div class="chapter__links"><a class="btn btn--use" href="https://tcg-restock-watch.vercel.app">Use it</a><button type="button" class="btn chapter__how" aria-expanded="false" aria-controls="built-tcg">How it&#x27;s built</button></div>
+      <div class="chapter__links"><a class="btn btn--use" href="https://tcgwatch.cylentlabs.com">Use it</a><button type="button" class="btn chapter__how" aria-expanded="false" aria-controls="built-tcg">How it&#x27;s built</button></div>
       <div class="chapter__built" id="built-tcg" hidden><p class="chapter__stack">Python with threaded pollers, browser automation, Discord alerts, and a Vercel status page.</p><ul><li>121 retailer listings across 7 retailers, priced against 91 TCGplayer products (as of 2026-10-03).</li><li>Two polling lanes: slow browser-driven retailers no longer hold up fast plain-HTTP ones. GameStop&#x27;s effective poll fell from about 700 seconds to about 180.</li><li>The browser and its daemon are recycled when memory passes set limits, after leaks that grew to several gigabytes.</li></ul></div>
     </div>
   </section>
@@ -768,7 +789,7 @@ window.LAB = window.LAB || {};
 
 /* Hero: a turning double helix in 3D, standing upright and tilted. It is yawed, pitched and rolled, then projected
    with perspective, so its near end is larger and brighter than its far end. One rung group per project glows in its
-   hue, and each project's name sits to the right of its group. Dragging across the stage with a mouse spins it.
+   hue, and each project's name sits to the right of its group. A sideways drag or flick, by mouse or finger, spins it.
    Every CYCLE seconds a replication fork runs its length; on the way to the first chapter it unzips, far end first. */
 window.LAB = window.LAB || {};
 (() => {
@@ -780,6 +801,25 @@ window.LAB = window.LAB || {};
   // whole; at it the strands peel apart and the rungs pull back into them; behind it they zip up again.
   const CYCLE = 16, RUN = 9, FORK = 0.09;
   let m = 0, u, side, frac, jx, nR = 1, phase = 0, spin = 0, last = 0, view = null;
+  // spin: extra turn in rad per wall-clock second, positive turns the near side to the right
+  let held = null, FLICK = null, wall = 0; // the press spinning it now; the flick tokens; the last step's wall clock
+
+  // pure rules, kept apart from the DOM so tests can run them
+  L.helixRules = {
+    // the pointer's sideways speed in px/s over its last `win` ms, up to `now`: a pointer that stopped reads 0
+    velocity(pts, now, win) {
+      const recent = pts.filter((p) => p.t >= now - win);
+      if (recent.length < 2) return 0;
+      const a = recent[0], b = recent[recent.length - 1], ms = Math.max(now - a.t, 8);
+      return ((b.x - a.x) / ms) * 1000;
+    },
+    // px/s to rad/s: a swipe across the whole stage in one second turns it `sens` radians, on any screen size,
+    // capped so the dots' springs never lag into a cloud
+    spinRate: (pxPerS, width, sens, cap) => (width > 0 ? Math.max(-cap, Math.min(cap, (pxPerS / width) * sens)) : 0),
+    // a released spin decays exponentially with time constant `tau` seconds
+    coast: (w, dt, tau) => w * Math.exp(-dt / tau),
+  };
+  const rate = (h, now) => L.helixRules.spinRate(L.helixRules.velocity(h.pts, now, FLICK.win), h.w, FLICK.sens, FLICK.cap);
 
   // local coordinates: `along` the axis (top to bottom), `across` it, `deep` toward the viewer
   function rotate(v, along, across, deep) {
@@ -870,7 +910,10 @@ window.LAB = window.LAB || {};
     step(P, c, t) {
       if (!m) return;
       const dt = Math.min(0.05, Math.max(0, t - last)); last = t;
-      phase += (0.2 + spin) * dt; spin *= Math.pow(0.08, dt);
+      const now = performance.now(), dw = Math.min(0.05, Math.max(0, (now - wall) / 1000)); wall = now;
+      if (held) spin = rate(held, now); // held: it follows the pointer
+      else if (spin) spin = Math.abs(spin) < 0.01 ? 0 : L.helixRules.coast(spin, dw, FLICK.tau);
+      phase += 0.2 * dt + spin * dw;
       const v = view, k = TAU * v.turns / v.len, G = L.HUES.length;
       const fork = -0.15 + ((t % CYCLE) / RUN) * 1.3; // past 1.15 it has left the helix until the next cycle
       reading(fork, G);
@@ -898,19 +941,38 @@ window.LAB = window.LAB || {};
     },
   };
 
-  // a drag spins it; the spin eases back to the resting turn. On a touch screen the stage is pan-y, so an up-or-down
-  // swipe goes to the browser to scroll (pointercancel) and only a sideways swipe spins it.
+  // Flick to spin. While held, the helix turns at the pointer's sideways speed (its last FLICK.win ms), so it feels
+  // attached; on release it keeps that speed and coasts down like a fidget spinner. On a touch screen the stage is
+  // pan-y, so an up-or-down swipe goes to the browser to scroll (pointercancel) and only a sideways swipe spins it.
+  L.helixState = () => ({ spin, phase, held: !!held }); // read-only, for tests and the browser checks
   const stage = document.querySelector(".helix__stage");
   if (!stage || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  let down = null;
-  stage.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });
-  addEventListener("pointermove", (e) => {
-    if (!down) return;
-    spin += ((e.clientX - down.x) + (e.clientY - down.y)) * 0.012;
-    spin = Math.max(-2.5, Math.min(2.5, spin)); // faster and the dots' springs lag into a cloud
-    down = { x: e.clientX, y: e.clientY };
+  const css = getComputedStyle(document.documentElement), num = (n) => parseFloat(css.getPropertyValue(n));
+  FLICK = { sens: num("--spin-sens"), cap: num("--spin-cap"), tau: num("--spin-coast") / 1000, win: num("--spin-window") };
+  const root = document.documentElement, noSelect = (e) => e.preventDefault();
+  stage.addEventListener("pointerdown", (e) => {
+    if (e.button) return; // the main button or a finger only
+    held = { id: e.pointerId, w: stage.clientWidth, pts: [{ t: e.timeStamp, x: e.clientX }] };
+    if (e.pointerType === "mouse") { // a mouse drag must not select text or start a native drag on the names
+      e.preventDefault(); stage.setPointerCapture(e.pointerId);
+      root.classList.add("is-spinning"); addEventListener("selectstart", noSelect);
+    }
+  });
+  stage.addEventListener("pointermove", (e) => {
+    if (!held || e.pointerId !== held.id) return;
+    held.pts.push({ t: e.timeStamp, x: e.clientX });
+    if (held.pts.length > 32) held.pts.shift();
   }, { passive: true });
-  for (const ev of ["pointerup", "pointercancel"]) addEventListener(ev, () => { down = null; });
+  const release = (e) => {
+    if (!held || e.pointerId !== held.id) return;
+    // a flick keeps the speed it was released at; a held-still release, none; a cancel (the page scrolled), none
+    if (e.type === "pointerup") held.pts.push({ t: e.timeStamp, x: e.clientX });
+    spin = e.type === "pointerup" ? rate(held, e.timeStamp) : 0;
+    held = null;
+    root.classList.remove("is-spinning"); removeEventListener("selectstart", noSelect);
+  };
+  stage.addEventListener("pointerup", release);
+  stage.addEventListener("pointercancel", release);
 })();
 
 /* Field: one canvas and a few thousand particles. Particles spring toward the targets the active shape sets.
@@ -924,6 +986,8 @@ window.LAB = window.LAB || {};
   L.fieldRules = {
     // a touch is a tap when it barely moved and lifted quickly; anything else was a scroll or a drag
     isTap: (dx, dy, ms, slop, maxMs) => dx * dx + dy * dy <= slop * slop && ms <= maxMs,
+    // a mouse press is a click when it barely moved, however long it was held; a drag (the helix's spin) is not
+    isClick: (dx, dy, slop) => dx * dx + dy * dy <= slop * slop,
     // the canvas's pixels per CSS pixel: never above the screen's own, capped lower on touch screens
     dpr: (screen, fine, capFine, capTouch) => Math.max(1, Math.min(screen || 1, fine ? capFine : capTouch)),
     // the wake's radius follows the screen, so a phone's wake is as small next to its screen as a desktop's
@@ -945,6 +1009,7 @@ window.LAB = window.LAB || {};
   const WAKE = { size: num("--wake-size"), push: num("--wake-push"), life: num("--wake-life") / 1000 };
   const TAP = { slop: num("--tap-slop"), ms: num("--tap-time") };
   const TRAIL = { gap: num("--wake-trail-gap"), max: num("--wake-max") }; // a swipe's trail: spacing in radii, cap
+  const BOW = { speed: num("--bow-speed"), still: num("--bow-still"), ease: num("--bow-ease"), depth: num("--bow-depth") };
   // `small` picks the phone layout and is re-read on every resize; the dot count is fixed at load
   let small = innerWidth < 700;
   const N = Math.round(small ? num("--field-count-phone") : num("--field-count"));
@@ -965,7 +1030,8 @@ window.LAB = window.LAB || {};
     wob[i] = Math.random() * 6.28;
   }
 
-  const view = { dpr: 1, mx: 0.5, my: 0.5, sx: 0.5, sy: 0.5, intro: 0, px: -999, py: -999, hover: false, so: 0, wakeR: 0 };
+  const view = { dpr: 1, mx: 0.5, my: 0.5, sx: 0.5, sy: 0.5, intro: 0, px: -999, py: -999, hover: false, so: 0, wakeR: 0,
+    hvx: 0, hvy: 0, lpx: -999, lpy: -999 }; // the hover's smoothed velocity, and where the cursor was last frame
   const wakes = []; // {x, y, dx, dy, age}: a soft patch left where the screen was tapped, drifting along (dx, dy)
   // the active shape's stage box, in page coordinates
   let shape = null, stopId = "hero", geo = { sx: 0, sy: 0, sw: 0, sh: 0 }, t0 = performance.now(), last = t0;
@@ -1097,38 +1163,69 @@ window.LAB = window.LAB || {};
       else { vx[i] += (ux * 0.5 - uy * 0.5) * k; vy[i] += (uy * 0.5 + ux * 0.5) * k; }
     }
   }
-  // pointer forces: hover pushes nearby dots away (mouse only); each wake nudges the dots it covers
-  function push(i, f, hr) {
-    const sy = y[i] + (P.amb[i] ? 0 : view.so); // where the dot is on screen
-    if (view.hover) {
-      const dx = x[i] - view.px, dy = sy - view.py, d2 = dx * dx + dy * dy;
-      if (d2 < hr * hr) {
-        const d = Math.sqrt(d2) || 1, k = Math.pow(1 - d / hr, 1.5) * 6 * f;
-        vx[i] += (dx / d) * k; vy[i] += (dy / d) * k;
-      }
-    }
-    if (wakes.length) wakePush(i, x[i], sy, f);
+  // The hover is a bow wave: a soft patch (Gaussian, no rim) that the dots move out of. Moving, it stretches ahead
+  // along the way the cursor goes, dots parting to either side and filling back in behind. Parked, it shrinks to a
+  // small clear hole that holds still; when the cursor leaves, the dots fill it back in.
+  // It moves where a dot rests, not the dot: each dot's spring target is offset by a field measured from the target
+  // itself, so a dot settles at its new place. History, all 2026-10-03: a push on velocity pulsed under a parked
+  // cursor (pushed out of reach, sprung back, pushed again); a smooth radial spread fixed that but was a magnifying
+  // lens ("it zooms in"); a moving-only wave fixed that but let the dots ignore a parked cursor. Now: a hole-shaped
+  // profile that is smooth at the centre, at every speed.
+  // `bow` holds the per-frame shape, set by bowShape() before simulate(); bowOffset() leaves its answer in OFF.
+  const bow = { on: false, x: 0, y: 0, ux: 0, uy: 0, e: 0, R: 0, A: 0 };
+  const OFF = { x: 0, y: 0 };
+  function bowShape(hr) {
+    bow.on = view.hover;
+    if (!bow.on) return;
+    const sp = Math.hypot(view.hvx, view.hvy), e = Math.min(1, sp / BOW.speed);
+    bow.x = view.px; bow.y = view.py; bow.e = e;
+    bow.ux = sp > 0.01 ? view.hvx / sp : 0; bow.uy = sp > 0.01 ? view.hvy / sp : 0;
+    bow.R = hr * (BOW.still + (1 - BOW.still) * e);
+    bow.A = bow.R * BOW.depth; // how far it moves the dots it covers: a parked cursor keeps a small clear hole
+  }
+  function bowOffset(sx, sy) {
+    OFF.x = OFF.y = 0;
+    const dx = sx - bow.x, dy = sy - bow.y, { ux, uy, e, R } = bow;
+    const a = dx * ux + dy * uy, b = dy * ux - dx * uy; // along the motion (ahead > 0), and across it
+    const al = a / (R * (a > 0 ? 1 + 0.8 * e : 1 - 0.4 * e)), ac = b / (R * (1 + 0.15 * e));
+    const n2 = al * al + ac * ac;
+    if (n2 > 2.25) return;
+    // A hole, not a lens: the push is near full strength a short way out (core: 0.3 R) and fades with the Gaussian,
+    // so dots clear out of the middle instead of all spreading in proportion. It still falls to zero at the exact
+    // centre, so a target drifting across it moves smoothly. Directions: out from the cursor, parted sideways
+    // across the motion, and a little forward for the dots ahead.
+    const d = Math.hypot(dx, dy) || 1, core = 0.3 * R;
+    const m = (1 - Math.exp(-(d * d) / (core * core))) * Math.exp(-1.6 * n2) * bow.A;
+    const side = Math.max(-1, Math.min(1, b / core)), fwd = a > 0 ? 0.3 * e : 0;
+    OFF.x = (dx / d * (1 - 0.5 * e) - uy * side * 0.6 * e + ux * fwd) * m;
+    OFF.y = (dy / d * (1 - 0.5 * e) + ux * side * 0.6 * e + uy * fwd) * m;
+  }
+  // each wake nudges the dots it covers
+  function push(i, f) {
+    if (wakes.length) wakePush(i, x[i], y[i] + (P.amb[i] ? 0 : view.so), f);
   }
 
   // moves every dot one step; returns the fastest dot's speed, in px per 60th of a second
   function simulate(dt, f, t) {
-    const damp = Math.pow(0.9, f), hr = small ? 80 : 130;
+    const damp = Math.pow(0.9, f);
+    bowShape(small ? 80 : 130);
     let fastest = 0, waiting = 0;
     for (let i = 0; i < N; i++) {
       if (hold[i] > 0) { // still part of the old shape: it waits its turn, but the pointer can still move it
-        hold[i] -= dt; vx[i] *= damp; vy[i] *= damp; push(i, f, hr); waiting = 1;
+        hold[i] -= dt; vx[i] *= damp; vy[i] *= damp; push(i, f); waiting = 1;
         x[i] += vx[i] * f; y[i] += vy[i] * f;
         if (hold[i] <= 0 && drawn[i]) { // the head has reached it: appear at its place, just above, and settle
           x[i] = P.tx[i]; y[i] = P.ty[i] - SLIDE; drawn[i] = 0;
         }
         continue;
       }
-      const ax = P.tx[i] + Math.sin(t * 0.4 + wob[i]) * (P.amb[i] ? DRIFT : 0.6); // shape dots barely breathe, so grids stay crisp
-      const ay = P.ty[i] + Math.cos(t * 0.33 + wob[i]) * (P.amb[i] ? DRIFT : 0.6);
+      let ax = P.tx[i] + Math.sin(t * 0.4 + wob[i]) * (P.amb[i] ? DRIFT : 0.6); // shape dots barely breathe, so grids stay crisp
+      let ay = P.ty[i] + Math.cos(t * 0.33 + wob[i]) * (P.amb[i] ? DRIFT : 0.6);
+      if (bow.on) { bowOffset(ax, ay + (P.amb[i] ? 0 : view.so)); ax += OFF.x; ay += OFF.y; }
       const k = P.fast[i] ? 0.2 : stiff[i]; // the ball and the ping keep up with their targets
       vx[i] = (vx[i] + (ax - x[i]) * k * f) * damp;
       vy[i] = (vy[i] + (ay - y[i]) * k * f) * damp;
-      push(i, f, hr);
+      push(i, f);
       x[i] += vx[i] * f; y[i] += vy[i] * f;
       const v = Math.abs(vx[i]) + Math.abs(vy[i]);
       if (v > fastest) fastest = v;
@@ -1152,6 +1249,13 @@ window.LAB = window.LAB || {};
     view.intro = Math.min(1, view.intro + dt / 0.7); // visible almost at once, so the flow-in reads
     const drift = Math.abs(view.mx - view.sx) + Math.abs(view.my - view.sy);
     view.sx += (view.mx - view.sx) * 0.06; view.sy += (view.my - view.sy) * 0.06;
+    // the cursor's velocity in px per 60th of a second, smoothed so the bow wave turns and settles gently
+    const ease = 1 - Math.pow(1 - BOW.ease, f);
+    let jx = view.px - view.lpx, jy = view.py - view.lpy;
+    if (Math.abs(jx) + Math.abs(jy) > 300) jx = jy = 0; // the cursor arrived from off the page: not a movement
+    view.hvx += (jx / (f || 1) - view.hvx) * ease;
+    view.hvy += (jy / (f || 1) - view.hvy) * ease;
+    view.lpx = view.px; view.lpy = view.py;
     for (let k = wakes.length - 1; k >= 0; k--) { wakes[k].age += dt; if (wakes[k].age > WAKE.life) wakes.splice(k, 1); }
     shape.step && shape.step(P, L.ctx, t);
     const fastest = simulate(dt, f, t) + drift * 0.06 * 14 * 1.6; // the parallax moves the deepest dots this much
@@ -1168,6 +1272,19 @@ window.LAB = window.LAB || {};
     setStop(id, g, so) { const handoff = id !== stopId; stopId = id; if (g) geo = g; build(so, handoff); if (reduce) { snap(); render(); } },
     setOffset(v) { if (!reduce && v !== view.so) { view.so = v; wake(); } }, // scroll the shape with its stage
     wakeCount: () => wakes.length, // for tests
+    countNear(px, py, r) { // for tests: how many dots sit within r of a screen point
+      let n = 0;
+      for (let i = 0; i < N; i++) { const dx = x[i] - px, dy = y[i] + (P.amb[i] ? 0 : view.so) - py; if (dx * dx + dy * dy < r * r) n++; }
+      return n;
+    },
+    speedNear(px, py, r) { // for tests: the fastest dot within r of a screen point, px per 60th of a second
+      let m = 0;
+      for (let i = 0; i < N; i++) {
+        const dx = x[i] - px, dy = y[i] + (P.amb[i] ? 0 : view.so) - py;
+        if (dx * dx + dy * dy < r * r) m = Math.max(m, Math.abs(vx[i]) + Math.abs(vy[i]));
+      }
+      return m;
+    },
   };
   addEventListener("resize", resize);
   if (!reduce) listen();
@@ -1199,7 +1316,7 @@ window.LAB = window.LAB || {};
       if (!down) return;
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       // a click carries the way the mouse was heading; a tap, the way the finger slid, if it slid at all
-      if (fine && e.pointerType === "mouse") leave(e.clientX, e.clientY, view.vx || 0, view.vy || 0);
+      if (fine && e.pointerType === "mouse") { if (L.fieldRules.isClick(dx, dy, TAP.slop)) leave(e.clientX, e.clientY, view.vx || 0, view.vy || 0); }
       else if (L.fieldRules.isTap(dx, dy, e.timeStamp - down.at, TAP.slop, TAP.ms)) leave(e.clientX, e.clientY, dx, dy);
       down = null;
     }, { passive: true });
@@ -1207,7 +1324,8 @@ window.LAB = window.LAB || {};
     addEventListener("pointermove", (e) => {
       if (e.pointerType !== "mouse") return;
       view.vx = e.clientX - view.px; view.vy = e.clientY - view.py; // the last step's direction, for a click's wake
-      view.mx = e.clientX / P.w; view.my = e.clientY / P.h; view.px = e.clientX; view.py = e.clientY; view.hover = true;
+      // a held button is a drag spinning the helix: the cursor stops pushing dots, so the drag reads as a spin, not a poke
+      view.mx = e.clientX / P.w; view.my = e.clientY / P.h; view.px = e.clientX; view.py = e.clientY; view.hover = !e.buttons;
       wake();
     }, { passive: true });
     document.documentElement.addEventListener("pointerleave", () => { view.hover = false; });

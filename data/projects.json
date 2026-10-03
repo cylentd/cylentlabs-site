@@ -47,7 +47,7 @@
           "Tests are mapped to the views they touch. A CSS change runs about 14 seconds of tests instead of the full 65."
         ]
       },
-      "use": [{ "href": "https://team-watch-three.vercel.app" }],
+      "use": [{ "href": "https://teamwatch.cylentlabs.com" }],
       "how": null
     },
     {
@@ -65,7 +65,7 @@
           "The browser and its daemon are recycled when memory passes set limits, after leaks that grew to several gigabytes."
         ]
       },
-      "use": [{ "href": "https://tcg-restock-watch.vercel.app" }],
+      "use": [{ "href": "https://tcgwatch.cylentlabs.com" }],
       "how": null
     },
     {

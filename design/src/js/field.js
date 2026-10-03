@@ -9,6 +9,8 @@ window.LAB = window.LAB || {};
   L.fieldRules = {
     // a touch is a tap when it barely moved and lifted quickly; anything else was a scroll or a drag
     isTap: (dx, dy, ms, slop, maxMs) => dx * dx + dy * dy <= slop * slop && ms <= maxMs,
+    // a mouse press is a click when it barely moved, however long it was held; a drag (the helix's spin) is not
+    isClick: (dx, dy, slop) => dx * dx + dy * dy <= slop * slop,
     // the canvas's pixels per CSS pixel: never above the screen's own, capped lower on touch screens
     dpr: (screen, fine, capFine, capTouch) => Math.max(1, Math.min(screen || 1, fine ? capFine : capTouch)),
     // the wake's radius follows the screen, so a phone's wake is as small next to its screen as a desktop's
@@ -30,6 +32,7 @@ window.LAB = window.LAB || {};
   const WAKE = { size: num("--wake-size"), push: num("--wake-push"), life: num("--wake-life") / 1000 };
   const TAP = { slop: num("--tap-slop"), ms: num("--tap-time") };
   const TRAIL = { gap: num("--wake-trail-gap"), max: num("--wake-max") }; // a swipe's trail: spacing in radii, cap
+  const BOW = { speed: num("--bow-speed"), still: num("--bow-still"), ease: num("--bow-ease"), depth: num("--bow-depth") };
   // `small` picks the phone layout and is re-read on every resize; the dot count is fixed at load
   let small = innerWidth < 700;
   const N = Math.round(small ? num("--field-count-phone") : num("--field-count"));
@@ -50,7 +53,8 @@ window.LAB = window.LAB || {};
     wob[i] = Math.random() * 6.28;
   }
 
-  const view = { dpr: 1, mx: 0.5, my: 0.5, sx: 0.5, sy: 0.5, intro: 0, px: -999, py: -999, hover: false, so: 0, wakeR: 0 };
+  const view = { dpr: 1, mx: 0.5, my: 0.5, sx: 0.5, sy: 0.5, intro: 0, px: -999, py: -999, hover: false, so: 0, wakeR: 0,
+    hvx: 0, hvy: 0, lpx: -999, lpy: -999 }; // the hover's smoothed velocity, and where the cursor was last frame
   const wakes = []; // {x, y, dx, dy, age}: a soft patch left where the screen was tapped, drifting along (dx, dy)
   // the active shape's stage box, in page coordinates
   let shape = null, stopId = "hero", geo = { sx: 0, sy: 0, sw: 0, sh: 0 }, t0 = performance.now(), last = t0;
@@ -182,38 +186,69 @@ window.LAB = window.LAB || {};
       else { vx[i] += (ux * 0.5 - uy * 0.5) * k; vy[i] += (uy * 0.5 + ux * 0.5) * k; }
     }
   }
-  // pointer forces: hover pushes nearby dots away (mouse only); each wake nudges the dots it covers
-  function push(i, f, hr) {
-    const sy = y[i] + (P.amb[i] ? 0 : view.so); // where the dot is on screen
-    if (view.hover) {
-      const dx = x[i] - view.px, dy = sy - view.py, d2 = dx * dx + dy * dy;
-      if (d2 < hr * hr) {
-        const d = Math.sqrt(d2) || 1, k = Math.pow(1 - d / hr, 1.5) * 6 * f;
-        vx[i] += (dx / d) * k; vy[i] += (dy / d) * k;
-      }
-    }
-    if (wakes.length) wakePush(i, x[i], sy, f);
+  // The hover is a bow wave: a soft patch (Gaussian, no rim) that the dots move out of. Moving, it stretches ahead
+  // along the way the cursor goes, dots parting to either side and filling back in behind. Parked, it shrinks to a
+  // small clear hole that holds still; when the cursor leaves, the dots fill it back in.
+  // It moves where a dot rests, not the dot: each dot's spring target is offset by a field measured from the target
+  // itself, so a dot settles at its new place. History, all 2026-10-03: a push on velocity pulsed under a parked
+  // cursor (pushed out of reach, sprung back, pushed again); a smooth radial spread fixed that but was a magnifying
+  // lens ("it zooms in"); a moving-only wave fixed that but let the dots ignore a parked cursor. Now: a hole-shaped
+  // profile that is smooth at the centre, at every speed.
+  // `bow` holds the per-frame shape, set by bowShape() before simulate(); bowOffset() leaves its answer in OFF.
+  const bow = { on: false, x: 0, y: 0, ux: 0, uy: 0, e: 0, R: 0, A: 0 };
+  const OFF = { x: 0, y: 0 };
+  function bowShape(hr) {
+    bow.on = view.hover;
+    if (!bow.on) return;
+    const sp = Math.hypot(view.hvx, view.hvy), e = Math.min(1, sp / BOW.speed);
+    bow.x = view.px; bow.y = view.py; bow.e = e;
+    bow.ux = sp > 0.01 ? view.hvx / sp : 0; bow.uy = sp > 0.01 ? view.hvy / sp : 0;
+    bow.R = hr * (BOW.still + (1 - BOW.still) * e);
+    bow.A = bow.R * BOW.depth; // how far it moves the dots it covers: a parked cursor keeps a small clear hole
+  }
+  function bowOffset(sx, sy) {
+    OFF.x = OFF.y = 0;
+    const dx = sx - bow.x, dy = sy - bow.y, { ux, uy, e, R } = bow;
+    const a = dx * ux + dy * uy, b = dy * ux - dx * uy; // along the motion (ahead > 0), and across it
+    const al = a / (R * (a > 0 ? 1 + 0.8 * e : 1 - 0.4 * e)), ac = b / (R * (1 + 0.15 * e));
+    const n2 = al * al + ac * ac;
+    if (n2 > 2.25) return;
+    // A hole, not a lens: the push is near full strength a short way out (core: 0.3 R) and fades with the Gaussian,
+    // so dots clear out of the middle instead of all spreading in proportion. It still falls to zero at the exact
+    // centre, so a target drifting across it moves smoothly. Directions: out from the cursor, parted sideways
+    // across the motion, and a little forward for the dots ahead.
+    const d = Math.hypot(dx, dy) || 1, core = 0.3 * R;
+    const m = (1 - Math.exp(-(d * d) / (core * core))) * Math.exp(-1.6 * n2) * bow.A;
+    const side = Math.max(-1, Math.min(1, b / core)), fwd = a > 0 ? 0.3 * e : 0;
+    OFF.x = (dx / d * (1 - 0.5 * e) - uy * side * 0.6 * e + ux * fwd) * m;
+    OFF.y = (dy / d * (1 - 0.5 * e) + ux * side * 0.6 * e + uy * fwd) * m;
+  }
+  // each wake nudges the dots it covers
+  function push(i, f) {
+    if (wakes.length) wakePush(i, x[i], y[i] + (P.amb[i] ? 0 : view.so), f);
   }
 
   // moves every dot one step; returns the fastest dot's speed, in px per 60th of a second
   function simulate(dt, f, t) {
-    const damp = Math.pow(0.9, f), hr = small ? 80 : 130;
+    const damp = Math.pow(0.9, f);
+    bowShape(small ? 80 : 130);
     let fastest = 0, waiting = 0;
     for (let i = 0; i < N; i++) {
       if (hold[i] > 0) { // still part of the old shape: it waits its turn, but the pointer can still move it
-        hold[i] -= dt; vx[i] *= damp; vy[i] *= damp; push(i, f, hr); waiting = 1;
+        hold[i] -= dt; vx[i] *= damp; vy[i] *= damp; push(i, f); waiting = 1;
         x[i] += vx[i] * f; y[i] += vy[i] * f;
         if (hold[i] <= 0 && drawn[i]) { // the head has reached it: appear at its place, just above, and settle
           x[i] = P.tx[i]; y[i] = P.ty[i] - SLIDE; drawn[i] = 0;
         }
         continue;
       }
-      const ax = P.tx[i] + Math.sin(t * 0.4 + wob[i]) * (P.amb[i] ? DRIFT : 0.6); // shape dots barely breathe, so grids stay crisp
-      const ay = P.ty[i] + Math.cos(t * 0.33 + wob[i]) * (P.amb[i] ? DRIFT : 0.6);
+      let ax = P.tx[i] + Math.sin(t * 0.4 + wob[i]) * (P.amb[i] ? DRIFT : 0.6); // shape dots barely breathe, so grids stay crisp
+      let ay = P.ty[i] + Math.cos(t * 0.33 + wob[i]) * (P.amb[i] ? DRIFT : 0.6);
+      if (bow.on) { bowOffset(ax, ay + (P.amb[i] ? 0 : view.so)); ax += OFF.x; ay += OFF.y; }
       const k = P.fast[i] ? 0.2 : stiff[i]; // the ball and the ping keep up with their targets
       vx[i] = (vx[i] + (ax - x[i]) * k * f) * damp;
       vy[i] = (vy[i] + (ay - y[i]) * k * f) * damp;
-      push(i, f, hr);
+      push(i, f);
       x[i] += vx[i] * f; y[i] += vy[i] * f;
       const v = Math.abs(vx[i]) + Math.abs(vy[i]);
       if (v > fastest) fastest = v;
@@ -237,6 +272,13 @@ window.LAB = window.LAB || {};
     view.intro = Math.min(1, view.intro + dt / 0.7); // visible almost at once, so the flow-in reads
     const drift = Math.abs(view.mx - view.sx) + Math.abs(view.my - view.sy);
     view.sx += (view.mx - view.sx) * 0.06; view.sy += (view.my - view.sy) * 0.06;
+    // the cursor's velocity in px per 60th of a second, smoothed so the bow wave turns and settles gently
+    const ease = 1 - Math.pow(1 - BOW.ease, f);
+    let jx = view.px - view.lpx, jy = view.py - view.lpy;
+    if (Math.abs(jx) + Math.abs(jy) > 300) jx = jy = 0; // the cursor arrived from off the page: not a movement
+    view.hvx += (jx / (f || 1) - view.hvx) * ease;
+    view.hvy += (jy / (f || 1) - view.hvy) * ease;
+    view.lpx = view.px; view.lpy = view.py;
     for (let k = wakes.length - 1; k >= 0; k--) { wakes[k].age += dt; if (wakes[k].age > WAKE.life) wakes.splice(k, 1); }
     shape.step && shape.step(P, L.ctx, t);
     const fastest = simulate(dt, f, t) + drift * 0.06 * 14 * 1.6; // the parallax moves the deepest dots this much
@@ -253,6 +295,19 @@ window.LAB = window.LAB || {};
     setStop(id, g, so) { const handoff = id !== stopId; stopId = id; if (g) geo = g; build(so, handoff); if (reduce) { snap(); render(); } },
     setOffset(v) { if (!reduce && v !== view.so) { view.so = v; wake(); } }, // scroll the shape with its stage
     wakeCount: () => wakes.length, // for tests
+    countNear(px, py, r) { // for tests: how many dots sit within r of a screen point
+      let n = 0;
+      for (let i = 0; i < N; i++) { const dx = x[i] - px, dy = y[i] + (P.amb[i] ? 0 : view.so) - py; if (dx * dx + dy * dy < r * r) n++; }
+      return n;
+    },
+    speedNear(px, py, r) { // for tests: the fastest dot within r of a screen point, px per 60th of a second
+      let m = 0;
+      for (let i = 0; i < N; i++) {
+        const dx = x[i] - px, dy = y[i] + (P.amb[i] ? 0 : view.so) - py;
+        if (dx * dx + dy * dy < r * r) m = Math.max(m, Math.abs(vx[i]) + Math.abs(vy[i]));
+      }
+      return m;
+    },
   };
   addEventListener("resize", resize);
   if (!reduce) listen();
@@ -284,7 +339,7 @@ window.LAB = window.LAB || {};
       if (!down) return;
       const dx = e.clientX - down.x, dy = e.clientY - down.y;
       // a click carries the way the mouse was heading; a tap, the way the finger slid, if it slid at all
-      if (fine && e.pointerType === "mouse") leave(e.clientX, e.clientY, view.vx || 0, view.vy || 0);
+      if (fine && e.pointerType === "mouse") { if (L.fieldRules.isClick(dx, dy, TAP.slop)) leave(e.clientX, e.clientY, view.vx || 0, view.vy || 0); }
       else if (L.fieldRules.isTap(dx, dy, e.timeStamp - down.at, TAP.slop, TAP.ms)) leave(e.clientX, e.clientY, dx, dy);
       down = null;
     }, { passive: true });
@@ -292,7 +347,8 @@ window.LAB = window.LAB || {};
     addEventListener("pointermove", (e) => {
       if (e.pointerType !== "mouse") return;
       view.vx = e.clientX - view.px; view.vy = e.clientY - view.py; // the last step's direction, for a click's wake
-      view.mx = e.clientX / P.w; view.my = e.clientY / P.h; view.px = e.clientX; view.py = e.clientY; view.hover = true;
+      // a held button is a drag spinning the helix: the cursor stops pushing dots, so the drag reads as a spin, not a poke
+      view.mx = e.clientX / P.w; view.my = e.clientY / P.h; view.px = e.clientX; view.py = e.clientY; view.hover = !e.buttons;
       wake();
     }, { passive: true });
     document.documentElement.addEventListener("pointerleave", () => { view.hover = false; });

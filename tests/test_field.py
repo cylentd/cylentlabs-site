@@ -75,6 +75,10 @@ out.tap = wakesAfter(() => { press(200, 300, 0); lift(203, 302, 120); });
 out.swipe = wakesAfter(() => { press(200, 500, 0); lift(205, 300, 200); });
 out.cancelled = wakesAfter(() => { press(200, 500, 0); for (const f of handlers.pointercancel) f({}); lift(200, 500, 100); });
 out.longPress = wakesAfter(() => { press(200, 300, 0); lift(200, 300, 900); });
+// a mouse click leaves a wake however long it was held; a mouse drag (spinning the helix) leaves none
+const mouse = (type, x, y, at) => { for (const f of handlers[type]) f({ clientX: x, clientY: y, timeStamp: at, pointerType: "mouse" }); };
+out.mouseClick = wakesAfter(() => { mouse("pointerdown", 200, 300, 0); mouse("pointerup", 202, 301, 900); });
+out.mouseDrag = wakesAfter(() => { mouse("pointerdown", 200, 300, 0); mouse("pointerup", 500, 310, 200); });
 out.wakeGone = L.field.wakeCount();
 // a finger's trail: touchmove keeps coming while the page scrolls; one wake per 0.6 radii (0.6 * 128 px here), capped
 const touch = (type, x, y) => { for (const f of handlers[type] || []) f({ touches: type === "touchend" ? [] : [{ clientX: x, clientY: y }] }); };
@@ -84,8 +88,20 @@ out.trailLong = swipe(4000);
 out.trailStill = swipe(0);
 const R = L.fieldRules;
 out.rules = { tapEdge: R.isTap(6, 8, 300, 10, 300), tapFar: R.isTap(8, 8, 100, 10, 300), tapSlow: R.isTap(0, 0, 301, 10, 300),
+  clickEdge: R.isClick(6, 8, 10), clickFar: R.isClick(8, 8, 10),
   dprPhone: R.dpr(3, false, 2, 1.5), dprDesk: R.dpr(3, true, 2, 1.5), dprLow: R.dpr(1, false, 2, 1.5),
   wakePhone: R.wakeRadius(390, 844, 0.16), wakeDesk: R.wakeRadius(1280, 800, 0.16) };
+
+// a mouse parked over the dust (clear of the turning helix): the dots in its dent must settle, not pulse forever.
+// Measured as the fastest dot near the cursor over 2 s, against the same spot with no mouse.
+if (fine) {
+  const fastestNear = () => { let m = 0; for (let k = 0; k < 120; k++) { run(1); m = Math.max(m, L.field.speedNear(1100, 720, 250)); } return m; };
+  run(300); out.freeSpeed = fastestNear(); out.freeCore = L.field.countNear(1100, 720, 100);
+  for (const f of handlers.pointermove) f({ pointerType: "mouse", clientX: 1100, clientY: 720, buttons: 0 });
+  run(600); out.parkedSpeed = fastestNear(); out.parkedCore = L.field.countNear(1100, 720, 100);
+  // the cursor leaves: the dots fill the hole back in
+  docHandlers.pointerleave(); run(600); out.leftCore = L.field.countNear(1100, 720, 100);
+}
 
 document.hidden = true; for (const f of handlers.visibilitychange) f();
 out.rafWhileHidden = raf.length;
@@ -132,6 +148,17 @@ def test_touch_draws_every_frame_when_calm(stats, mouse):
     assert 30 <= mouse["drawsPer60"] < 60
 
 
+def test_a_parked_mouse_settles_instead_of_pulsing(mouse):
+    # the old dent swung dust dots ~80 px to and fro as their drifting targets crossed the cursor's centre
+    assert mouse["parkedSpeed"] < 0.5, (mouse["freeSpeed"], mouse["parkedSpeed"])  # 0.5: the field's own calm line
+
+
+def test_a_parked_mouse_clears_a_hole_that_fills_back_in(mouse):
+    assert mouse["freeCore"] > 0  # dust sits there to begin with
+    assert mouse["parkedCore"] < mouse["freeCore"]  # the dots move out of the cursor's way
+    assert mouse["leftCore"] >= mouse["freeCore"] - 1  # and fill back in once it leaves
+
+
 def test_touch_has_no_hover_or_parallax(stats, mouse):
     assert stats["moveHandlers"] == 0
     assert mouse["moveHandlers"] == 1
@@ -145,6 +172,11 @@ def test_a_press_leaves_one_wake_only_when_it_is_a_tap(stats):
     assert stats["wakeGone"] == 0  # it fades within two seconds
 
 
+def test_a_mouse_drag_leaves_no_wake(mouse):
+    assert mouse["mouseClick"] == 1
+    assert mouse["mouseDrag"] == 0  # the drag spun the helix; it is not a click
+
+
 def test_a_swipe_leaves_a_small_capped_trail(stats):
     assert stats["trailShort"] == 2  # 200 px of finger travel, a wake every ~77 px
     assert stats["trailLong"] == 12  # a long swipe keeps only its newest dozen
@@ -154,6 +186,7 @@ def test_a_swipe_leaves_a_small_capped_trail(stats):
 def test_the_rules(stats):
     r = stats["rules"]
     assert r["tapEdge"] and not r["tapFar"] and not r["tapSlow"]
+    assert r["clickEdge"] and not r["clickFar"]
     assert (r["dprPhone"], r["dprDesk"], r["dprLow"]) == (1.5, 2, 1)
     assert round(r["wakePhone"], 1) == 62.4 and r["wakeDesk"] == 128
 
