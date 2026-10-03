@@ -4,6 +4,7 @@ SHAPE_IDS = {"jarvis", "teamwatch", "tcg", "seat", "lock"}  # one per shape in d
 COPY_KEYS = {
     "site": {"title", "description", "skip"},
     "hero": {"wordmark", "name", "email_label", "github_label", "linkedin_label", "names_label", "quote"},
+    "rail": {"label"},
     "card": {"use", "how", "in_design"},
     "foot": {"line", "to_top"},
 }

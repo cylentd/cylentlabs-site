@@ -127,6 +127,8 @@ def test_built_page_landmarks():
     assert page.count('data-stop="') == len(DATA["projects"]) + 1  # plus the hero
     for p in DATA["projects"]:
         assert f'href="#{p["id"]}"' in page  # the helix names jump to each chapter
+        assert f'data-for="{p["id"]}"' in page  # and the rail has a link to each
+    assert page.count('class="rail"') == 1
     assert 'id="field"' in page and 'class="slide' not in page  # the pathology hero was dropped
     assert "{{" not in page
     for name in build.JS:

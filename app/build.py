@@ -11,8 +11,8 @@ from contracts import checks  # noqa: E402
 from core import render  # noqa: E402
 
 SRC = REPO / "design" / "src"
-CSS = ["tokens", "base", "hero", "chapters"]
-JS = ["shapes", "helix", "field", "demos", "built", "totop", "chapters"]  # order matters: shapes -> helix -> field -> ... -> chapters
+CSS = ["tokens", "base", "hero", "chapters", "rail"]
+JS = ["shapes", "helix", "field", "demos", "built", "totop", "rail", "chapters"]  # order matters: shapes -> helix -> field -> ... -> chapters
 
 
 def read(p):
@@ -33,9 +33,10 @@ def build():
         js="\n".join(read(SRC / "js" / f"{n}.js") for n in JS),
         chapters="\n".join(render.chapter(p, copy["card"]) for p in data["projects"]),
         names=render.names(data["projects"], copy["hero"]),
+        rail=render.section_nav(data["projects"], copy["rail"]),
         contact_links=render.contact_links(data["contact"], copy["hero"], {k: read(SRC / "icons" / f"{k}.svg").strip() for k in ("linkedin", "github")}),
     )
-    raw = {"css", "js", "chapters", "names", "contact_links", "arrow_up"}
+    raw = {"css", "js", "chapters", "names", "rail", "contact_links", "arrow_up"}
     for p in data["projects"]:
         for c in p["clips"]:
             for kind in ("src", "poster"):

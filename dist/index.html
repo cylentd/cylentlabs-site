@@ -243,6 +243,59 @@ html { scroll-behavior: smooth; }
 }
 .to-top:hover { color: var(--ember-soft); border-color: var(--ember); }
 
+/* The chapter rail (rail.js). Hidden on the hero, where the helix names do this job. On a wide screen: the project
+   names down the left margin, the one being read in its hue. On a phone: a pill bottom-left (the back-to-top button
+   holds bottom-right) that names the chapter and opens the same list above it. */
+.rail {
+  position: fixed; z-index: 5; left: var(--gutter); bottom: var(--space-3);
+  font-size: var(--step--1);
+  transition: opacity var(--t-fast), visibility var(--t-fast);
+}
+body[data-active="hero"] .rail { opacity: 0; visibility: hidden; }
+@media (max-width: 1099px) { .rail.is-off { opacity: 0; visibility: hidden; } }
+
+.rail__list { margin: 0; padding: 0; list-style: none; }
+.rail__list a {
+  display: flex; align-items: center; gap: var(--space-1); min-height: 44px;
+  color: var(--ink-dim); text-decoration: none; white-space: nowrap;
+  transition: color var(--t-fast);
+}
+.rail__list a::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5;
+  transition: transform var(--t-fast), opacity var(--t-fast);
+}
+.rail__list a:hover { color: var(--ink); }
+.rail__list a[aria-current="true"] { color: var(--hue); }
+.rail__list a[aria-current="true"]::before { opacity: 1; transform: scale(1.5); }
+
+/* phone and tablet: the pill, and the list as a small panel above it */
+.rail__pill {
+  display: inline-flex; align-items: center; gap: var(--space-1); min-height: 44px; padding: 0 var(--space-2);
+  border: 1px solid var(--line); border-radius: 999px; background: var(--bg-lift);
+  font: inherit; color: var(--ink); cursor: pointer;
+}
+.rail__pill::after { content: "\25BE"; color: var(--ink-dim); transition: transform var(--t-fast); }
+.rail__pill[aria-expanded="true"]::after { transform: rotate(180deg); }
+.rail__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--hue, var(--ink-dim)); }
+.rail .rail__list {
+  position: absolute; left: 0; bottom: calc(100% + var(--space-1));
+  padding: var(--space-1) var(--space-2); border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-lift);
+}
+.rail__pill[aria-expanded="false"] + .rail__list { display: none; }
+
+/* wide screen: no pill, the list sits in the left margin, centred on the screen's height */
+@media (min-width: 1100px) {
+  .rail { bottom: auto; top: 50%; transform: translateY(-50%); }
+  .rail__pill { display: none; }
+  .rail .rail__list, .rail__pill[aria-expanded="false"] + .rail__list {
+    display: block; position: static; padding: 0; border: 0; background: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rail, .rail__list a, .rail__list a::before, .rail__pill::after { transition: none; }
+}
+
 </style>
 <noscript><style>.helix.js-wait .helix__names { visibility: visible; }</style></noscript>
 </head>
@@ -336,6 +389,7 @@ html { scroll-behavior: smooth; }
     </div>
   </footer>
 </main>
+<nav class="rail" aria-label="Projects"><button type="button" class="rail__pill" aria-expanded="false" aria-controls="rail-list"><span class="rail__dot" aria-hidden="true"></span><span class="rail__now">Projects</span></button><ol class="rail__list" id="rail-list"><li><a href="#jarvis" data-for="jarvis" style="--hue: var(--hue-jarvis)">ff-jarvis</a></li><li><a href="#teamwatch" data-for="teamwatch" style="--hue: var(--hue-teamwatch)">Team Watch</a></li><li><a href="#tcg" data-for="tcg" style="--hue: var(--hue-tcg)">Restock Watch</a></li><li><a href="#seat" data-for="seat" style="--hue: var(--hue-seat)">seat-scout</a></li><li><a href="#lock" data-for="lock" style="--hue: var(--hue-lock)">Team Lock</a></li></ol></nav>
 <a class="to-top" href="#top" aria-label="Back to top" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></a>
 <script>
 /* Shapes: where the particles go. Each shape fills a stage box c = {sx, sy, sw, sh} (page coordinates; the field
@@ -941,6 +995,38 @@ window.LAB = window.LAB || {};
   const show = () => { btn.hidden = !(pastHero && !footSeen); };
   new IntersectionObserver(([e]) => { pastHero = !e.isIntersecting; show(); }).observe(hero);
   new IntersectionObserver(([e]) => { footSeen = e.isIntersecting; show(); }).observe(foot);
+})();
+
+/* The chapter rail: follows body[data-active] (set by chapters.js) to mark the chapter being read, names it on the
+   phone pill, and opens and closes the pill's list. */
+(() => {
+  const rail = document.querySelector(".rail");
+  if (!rail) return;
+  const pill = rail.querySelector(".rail__pill"), now = rail.querySelector(".rail__now"), links = [...rail.querySelectorAll(".rail__list a")];
+  const label = now.textContent;
+
+  const mark = () => {
+    const id = document.body.dataset.active;
+    let lit = null;
+    links.forEach((a) => {
+      const on = a.dataset.for === id;
+      if (on) { a.setAttribute("aria-current", "true"); lit = a; } else a.removeAttribute("aria-current");
+    });
+    now.textContent = lit ? lit.textContent : label;
+    pill.style.cssText = lit ? lit.style.cssText : "";
+    if (id === "hero") close();
+  };
+  const close = () => pill.setAttribute("aria-expanded", "false");
+
+  pill.addEventListener("click", () => pill.setAttribute("aria-expanded", String(pill.getAttribute("aria-expanded") !== "true")));
+  links.forEach((a) => a.addEventListener("click", close));
+  document.addEventListener("click", (e) => { if (!rail.contains(e.target)) close(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+  // the footer's wordmark sits where the phone pill does: step aside while it is on screen
+  const foot = document.querySelector(".foot");
+  if (foot) new IntersectionObserver(([e]) => { rail.classList.toggle("is-off", e.isIntersecting); if (e.isIntersecting) close(); }).observe(foot);
+  new MutationObserver(mark).observe(document.body, { attributes: true, attributeFilter: ["data-active"] });
+  mark();
 })();
 
 /* Chapters: the hero's helix, then one chapter per project. The active one is the last whose motif box has risen past

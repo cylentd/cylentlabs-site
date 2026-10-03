@@ -49,6 +49,20 @@ def names(projects, copy):
     return f'<nav class="helix__names" style="--n: {len(projects)}" aria-label="{esc(copy["names_label"])}">{items}</nav>'
 
 
+def section_nav(projects, copy):
+    """The chapter rail, shown once the hero scrolls away: a list on the left of a wide screen, a pill that opens the
+    same list on a phone. rail.js marks the chapter being read; the pill names it."""
+    items = "".join(
+        f'<li><a href="#{esc(p["id"])}" data-for="{esc(p["id"])}" {hue(p["id"])}>{esc(p["name"])}</a></li>' for p in projects
+    )
+    return (
+        f'<nav class="rail" aria-label="{esc(copy["label"])}">'
+        f'<button type="button" class="rail__pill" aria-expanded="false" aria-controls="rail-list">'
+        f'<span class="rail__dot" aria-hidden="true"></span><span class="rail__now">{esc(copy["label"])}</span></button>'
+        f'<ol class="rail__list" id="rail-list">{items}</ol></nav>'
+    )
+
+
 def headline(p):
     """One result number, or nothing: builder stats live under How it's built."""
     h = p.get("headline")

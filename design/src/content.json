@@ -13,6 +13,9 @@
     "names_label": "Projects",
     "quote": "welcome to my lab. let's cook."
   },
+  "rail": {
+    "label": "Projects"
+  },
   "card": {
     "use": "Use it",
     "how": "How it's built",
