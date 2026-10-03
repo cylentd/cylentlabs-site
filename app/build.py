@@ -11,8 +11,8 @@ from contracts import checks  # noqa: E402
 from core import lab, render  # noqa: E402
 
 SRC = REPO / "design" / "src"
-CSS = ["tokens", "base", "hero", "chapters", "rail", "lab"]
-LAB_CSS = ["tokens", "base", "hero", "chapters", "lab"]  # the reading pages: no rail, no field
+CSS = ["fonts", "tokens", "base", "hero", "chapters", "rail", "lab"]
+LAB_CSS = ["fonts", "tokens", "base", "hero", "chapters", "lab"]  # the reading pages: no rail, no field
 JS = ["shapes", "helix", "field", "demos", "built", "totop", "rail", "chapters"]  # order matters: shapes -> helix -> field -> ... -> chapters
 
 

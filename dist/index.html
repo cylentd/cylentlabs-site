@@ -20,10 +20,24 @@
 <link rel="icon" href="assets/icon/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icon/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icon/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="preload" href="/assets/fonts/hanken-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/instrument-serif-italic-latin.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+/* The two type families, served from this site (latin subset, woff2) so the first paint waits on no other host.
+   Both are SIL Open Font License 1.1 (see assets/fonts/LICENSE.md). Hanken Grotesk is one variable file for 400-600. */
+@font-face {
+  font-family: "Hanken Grotesk"; font-style: normal; font-weight: 400 600; font-display: swap;
+  src: url("/assets/fonts/hanken-grotesk-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("/assets/fonts/instrument-serif-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif"; font-style: italic; font-weight: 400; font-display: swap;
+  src: url("/assets/fonts/instrument-serif-italic-latin.woff2") format("woff2");
+}
+
 /* Every colour, space, type and motion value lives here. A literal anywhere else is a bug. */
 :root {
   /* colour map: ember = the primary action, ink = text, bg = night, signal = background dust. Grey only for dimmed. */

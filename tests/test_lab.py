@@ -1,5 +1,6 @@
 import json
 import pathlib
+import re
 import sys
 
 import pytest
@@ -71,6 +72,16 @@ def test_empty_lab_says_so():
 def test_home_links_the_lab_twice():
     page, _ = build.build()
     assert page.count('class="lablink" href="/lab/"') == 2
+
+
+# fonts come from this site: no third-party font host, and every font file a page names exists
+def test_fonts_are_self_hosted():
+    page, _ = build.build()
+    pages = [page] + list(build.build_lab(COPY, DATA, [lab.parse(POST, "a-note")]).values())
+    for html in pages:
+        assert "fonts.googleapis.com" not in html and "fonts.gstatic.com" not in html
+        for f in re.findall(r"/assets/fonts/([\w-]+\.woff2)", html):
+            assert (REPO / "design" / "src" / "assets" / "fonts" / f).is_file(), f
 
 
 # every page carries its own canonical URL and a preview card with an absolute image URL

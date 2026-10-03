@@ -1,0 +1,14 @@
+/* The two type families, served from this site (latin subset, woff2) so the first paint waits on no other host.
+   Both are SIL Open Font License 1.1 (see assets/fonts/LICENSE.md). Hanken Grotesk is one variable file for 400-600. */
+@font-face {
+  font-family: "Hanken Grotesk"; font-style: normal; font-weight: 400 600; font-display: swap;
+  src: url("/assets/fonts/hanken-grotesk-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("/assets/fonts/instrument-serif-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif"; font-style: italic; font-weight: 400; font-display: swap;
+  src: url("/assets/fonts/instrument-serif-italic-latin.woff2") format("woff2");
+}
