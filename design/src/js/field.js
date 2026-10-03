@@ -1,7 +1,7 @@
 /* Field: one canvas and a few thousand particles. Particles spring toward the targets the active shape sets.
    With a mouse, the pointer pushes them away on hover and tilts the field (parallax). A tap or click leaves a small
-   wake that drifts the way the finger or pointer moved and fades; a swipe that scrolls leaves nothing. Background
-   dust draws fainter. */
+   wake that drifts the way the finger or pointer moved and fades; a finger swiping across the screen, scrolling or
+   not, leaves a trail of them. Background dust draws fainter. */
 window.LAB = window.LAB || {};
 (() => {
   const L = window.LAB;
@@ -29,6 +29,7 @@ window.LAB = window.LAB || {};
   const PACE = num("--field-pace"), DRIFT = num("--field-drift");
   const WAKE = { size: num("--wake-size"), push: num("--wake-push"), life: num("--wake-life") / 1000 };
   const TAP = { slop: num("--tap-slop"), ms: num("--tap-time") };
+  const TRAIL = { gap: num("--wake-trail-gap"), max: num("--wake-max") }; // a swipe's trail: spacing in radii, cap
   // `small` picks the phone layout and is re-read on every resize; the dot count is fixed at load
   let small = innerWidth < 700;
   const N = Math.round(small ? num("--field-count-phone") : num("--field-count"));
@@ -260,8 +261,22 @@ window.LAB = window.LAB || {};
     const leave = (x0, y0, dx, dy) => {
       const d = Math.hypot(dx, dy), dir = d > 2 ? 1 / d : 0;
       wakes.push({ x: x0, y: y0, dx: dx * dir, dy: dy * dir, age: 0 });
+      if (wakes.length > TRAIL.max) wakes.shift(); // a long swipe keeps only its newest stretch
       wake();
     };
+    // a finger's trail: touchmove keeps firing while the browser scrolls (pointer events stop at pointercancel), so a
+    // swipe that scrolls the page still stirs the dots under it, one wake per TRAIL.gap radii travelled
+    let finger = null; // where the trail's last wake was left
+    addEventListener("touchstart", (e) => { const t = e.touches[0]; finger = { x: t.clientX, y: t.clientY }; }, { passive: true });
+    addEventListener("touchmove", (e) => {
+      const t = e.touches[0];
+      if (!finger || !t) return;
+      const dx = t.clientX - finger.x, dy = t.clientY - finger.y;
+      if (Math.hypot(dx, dy) < TRAIL.gap * view.wakeR) return;
+      leave(t.clientX, t.clientY, dx, dy);
+      finger = { x: t.clientX, y: t.clientY };
+    }, { passive: true });
+    addEventListener("touchend", () => { finger = null; }, { passive: true });
     let down = null; // the press a tap or click starts: where, when, and where it is now
     addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY, at: e.timeStamp, nx: e.clientX, ny: e.clientY }; }, { passive: true });
     addEventListener("pointercancel", () => { down = null; }, { passive: true }); // the browser took the touch to scroll

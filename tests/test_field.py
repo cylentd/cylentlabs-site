@@ -2,7 +2,7 @@
 Guards the 2026-10-03 cleanup: one bucketed draw per frame (it was 56 passes over every dot), no token reads per
 frame, no rAF while the page is hidden, and no shape rebuild for a phone URL bar showing or hiding.
 Guards the calmer field too: a touch screen gets a capped canvas resolution, a full frame rate, no hover or parallax,
-and a wake only for a real tap, never for a swipe."""
+one wake for a real tap, and a small capped trail for a swipe (restored 2026-10-03 after the phone lost its swipe)."""
 import json
 import pathlib
 import shutil
@@ -76,6 +76,12 @@ out.swipe = wakesAfter(() => { press(200, 500, 0); lift(205, 300, 200); });
 out.cancelled = wakesAfter(() => { press(200, 500, 0); for (const f of handlers.pointercancel) f({}); lift(200, 500, 100); });
 out.longPress = wakesAfter(() => { press(200, 300, 0); lift(200, 300, 900); });
 out.wakeGone = L.field.wakeCount();
+// a finger's trail: touchmove keeps coming while the page scrolls; one wake per 0.6 radii (0.6 * 128 px here), capped
+const touch = (type, x, y) => { for (const f of handlers[type] || []) f({ touches: type === "touchend" ? [] : [{ clientX: x, clientY: y }] }); };
+const swipe = (dist) => wakesAfter(() => { touch("touchstart", 200, 700); for (let d = 10; d <= dist; d += 10) touch("touchmove", 200, 700 - d); touch("touchend"); });
+out.trailShort = swipe(200);
+out.trailLong = swipe(4000);
+out.trailStill = swipe(0);
 const R = L.fieldRules;
 out.rules = { tapEdge: R.isTap(6, 8, 300, 10, 300), tapFar: R.isTap(8, 8, 100, 10, 300), tapSlow: R.isTap(0, 0, 301, 10, 300),
   dprPhone: R.dpr(3, false, 2, 1.5), dprDesk: R.dpr(3, true, 2, 1.5), dprLow: R.dpr(1, false, 2, 1.5),
@@ -131,12 +137,18 @@ def test_touch_has_no_hover_or_parallax(stats, mouse):
     assert mouse["moveHandlers"] == 1
 
 
-def test_only_a_tap_leaves_a_wake(stats):
+def test_a_press_leaves_one_wake_only_when_it_is_a_tap(stats):
     assert stats["tap"] == 1
     assert stats["swipe"] == 0
     assert stats["cancelled"] == 0
     assert stats["longPress"] == 0
     assert stats["wakeGone"] == 0  # it fades within two seconds
+
+
+def test_a_swipe_leaves_a_small_capped_trail(stats):
+    assert stats["trailShort"] == 2  # 200 px of finger travel, a wake every ~77 px
+    assert stats["trailLong"] == 12  # a long swipe keeps only its newest dozen
+    assert stats["trailStill"] == 0
 
 
 def test_the_rules(stats):

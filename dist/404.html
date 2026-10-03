@@ -91,12 +91,15 @@
   --field-dpr: 2;
   --field-dpr-touch: 1.5;
   /* the wake a tap or click leaves: radius as a fraction of the screen's short side, push strength, lifetime.
-     A touch counts as a tap only if it moves under tap-slop px and lifts within tap-time; a swipe leaves nothing. */
+     A touch counts as a tap only if it moves under tap-slop px and lifts within tap-time. A swipe leaves a trail
+     instead: one wake every wake-trail-gap radii of finger travel, at most wake-max alive at once. */
   --wake-size: 0.16;
   --wake-push: 1.5;
   --wake-life: 900ms;
   --tap-slop: 10;
   --tap-time: 300ms;
+  --wake-trail-gap: 0.6;
+  --wake-max: 12;
 }
 
 @media (min-width: 900px) {

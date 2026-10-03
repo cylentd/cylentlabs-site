@@ -130,10 +130,10 @@ window.LAB = window.LAB || {};
     },
   };
 
-  // a mouse drag spins it; the spin eases back to the resting turn. Touch screens skip it: a swipe there scrolls.
+  // a drag spins it; the spin eases back to the resting turn. On a touch screen the stage is pan-y, so an up-or-down
+  // swipe goes to the browser to scroll (pointercancel) and only a sideways swipe spins it.
   const stage = document.querySelector(".helix__stage");
   if (!stage || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
   let down = null;
   stage.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });
   addEventListener("pointermove", (e) => {
