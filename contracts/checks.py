@@ -5,7 +5,7 @@ COPY_KEYS = {
     "site": {"title", "description", "skip"},
     "hero": {"wordmark", "name", "email_label", "github_label", "linkedin_label", "names_label", "quote"},
     "card": {"use", "how", "in_design"},
-    "foot": {"asof", "to_top"},
+    "foot": {"line", "to_top"},
 }
 
 

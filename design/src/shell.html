@@ -6,6 +6,9 @@
 <title>{{site.title}}</title>
 <meta name="description" content="{{site.description}}">
 <meta name="theme-color" content="#07090c">
+<link rel="icon" href="assets/icon/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icon/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icon/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -37,7 +40,7 @@
       <a class="foot__mark" href="#top">{{hero.wordmark}}</a>
       {{contact_links}}
     </div>
-    <small>{{foot.asof}} {{facts_asof}}.</small>
+    <p class="foot__line">{{foot.line}}</p>
   </footer>
 </main>
 <a class="to-top" href="#top" aria-label="{{foot.to_top}}" hidden>{{arrow_up}}</a>

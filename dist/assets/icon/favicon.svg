@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- the hero's helix at icon size: two strands crossing, two rungs in project hues (ff-jarvis, seat-scout) -->
+  <rect width="32" height="32" rx="7" fill="#07090c"/>
+  <path d="M11 9.2H21" stroke="#ff7a3d" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M11 22.8H21" stroke="#4fc3b0" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M8.5 4C24 8 24 13 16 16S8 24 23.5 28" fill="none" stroke="#f3ede4" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M23.5 4C8 8 8 13 16 16S24 24 8.5 28" fill="none" stroke="#f3ede4" stroke-opacity="0.55" stroke-width="2.4" stroke-linecap="round"/>
+</svg>
