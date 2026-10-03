@@ -1,7 +1,7 @@
 /* Field: one canvas and a few thousand particles. Particles spring toward the targets the active shape sets.
    With a mouse, the pointer pushes them away on hover and tilts the field (parallax). A tap or click leaves a small
    wake that drifts the way the finger or pointer moved and fades; a finger swiping across the screen, scrolling or
-   not, leaves a trail of them. Background dust draws fainter. */
+   not, leaves a trail of them. Background dust draws fainter. Every dot is a round, anti-aliased disc. */
 window.LAB = window.LAB || {};
 (() => {
   const L = window.LAB;
@@ -32,7 +32,8 @@ window.LAB = window.LAB || {};
   const WAKE = { size: num("--wake-size"), push: num("--wake-push"), life: num("--wake-life") / 1000 };
   const TAP = { slop: num("--tap-slop"), ms: num("--tap-time") };
   const TRAIL = { gap: num("--wake-trail-gap"), max: num("--wake-max") }; // a swipe's trail: spacing in radii, cap
-  const BOW = { speed: num("--bow-speed"), still: num("--bow-still"), ease: num("--bow-ease"), depth: num("--bow-depth") };
+  const BOW = { speed: num("--bow-speed"), size: num("--bow-size"), ease: num("--bow-ease"), push: num("--bow-push"),
+    min: num("--bow-min") };
   // `small` picks the phone layout and is re-read on every resize; the dot count is fixed at load
   let small = innerWidth < 700;
   const N = Math.round(small ? num("--field-count-phone") : num("--field-count"));
@@ -48,8 +49,13 @@ window.LAB = window.LAB || {};
   };
   const x = new Float32Array(N), y = new Float32Array(N), vx = new Float32Array(N), vy = new Float32Array(N);
   const stiff = new Float32Array(N), depth = new Float32Array(N), wob = new Float32Array(N), hold = new Float32Array(N);
+  // dustC: a dust dot's damping per 60th of a second, set near critical for its own spring so a disturbed dot settles
+  // without bouncing. The shared 0.1 left the dust underdamped (16-40% overshoot), so a hover hole made it ring in
+  // and out: the "lens pulse", 2026-10-03. Shape dots keep the 0.1, which the helix and motifs were tuned with.
+  const dustC = new Float32Array(N), DUST_DAMP = num("--dust-damping");
   for (let i = 0; i < N; i++) {
     stiff[i] = 0.01 + Math.random() * 0.025; depth[i] = 0.4 + Math.random() * 1.2; // settles in about a second, with some stagger
+    dustC[i] = Math.min(0.5, DUST_DAMP * Math.sqrt(stiff[i]));
     wob[i] = Math.random() * 6.28;
   }
 
@@ -137,9 +143,14 @@ window.LAB = window.LAB || {};
     view.intro = 1;
   }
 
+  // Dots are round: each is its own one-circle path, which the browser draws as an anti-aliased disc on a fast path.
+  // Measured 2026-10-03, 5200 dots at 4x CPU throttle: 2.0-2.4 ms of script a frame (fillRect squares 1.9-2.9) at a
+  // full frame rate. Rejected: sprites via drawImage (10-12 ms of script) and many dots in one path, filled or as
+  // round-capped strokes (cheap script, but the page's idle frame rate halved on an RTX 3060 Ti).
   // One pass sorts the dots into buckets in the order the draw needs: class, then shape before dust, then level
   // (3 = lit). Each bucket then draws under one fillStyle and one globalAlpha. Classes and levels change every frame
   // (forks, lit boxes, pings), so the sort runs per frame; it is stable, so the paint order is the old 56-pass order.
+  const ROUND = num("--dot-round") / 2; // a disc's radius, per px of the square it replaced
   const NB = CLS.length * 8, start = new Int32Array(NB + 1), at = new Int32Array(NB);
   const key = new Uint16Array(N), order = new Uint32Array(N);
   function sort() {
@@ -155,17 +166,17 @@ window.LAB = window.LAB || {};
     ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
     ctx.clearRect(0, 0, P.w, P.h);
     sort();
-    const ox = (view.sx - 0.5) * 14, oy = (view.sy - 0.5) * 14;
+    const ox = (view.sx - 0.5) * 14, oy = (view.sy - 0.5) * 14, TAU = 2 * Math.PI;
     let cls = -1;
     for (let b = 0; b < NB; b++) {
       const e = start[b + 1];
       if (start[b] === e) continue;
-      const a = (b >> 2) & 1, l = b & 3, base = l === 3 ? dotLit : dot, so = a ? 0 : view.so; // a = 1: dust, fainter
+      const a = (b >> 2) & 1, l = b & 3, r0 = (l === 3 ? dotLit : dot) * ROUND, so = a ? 0 : view.so; // a = 1: dust, fainter
       if (b >> 3 !== cls) { cls = b >> 3; ctx.fillStyle = CLS[cls]; } // setting a colour parses it: once per class
       ctx.globalAlpha = LEVEL[l] * view.intro * (a ? DUST : 1);
       for (let j = start[b]; j < e; j++) {
-        const i = order[j], size = base * P.sz[i];
-        ctx.fillRect(x[i] - ox * depth[i] - size / 2, y[i] + so - oy * depth[i] - size / 2, size, size);
+        const i = order[j];
+        ctx.beginPath(); ctx.arc(x[i] - ox * depth[i], y[i] + so - oy * depth[i], r0 * P.sz[i], 0, TAU); ctx.fill();
       }
     }
     ctx.globalAlpha = 1;
@@ -180,52 +191,44 @@ window.LAB = window.LAB || {};
       const e = w.age / WAKE.life, cx = w.x + w.dx * WAKE_TRAVEL * R * e, cy = w.y + w.dy * WAKE_TRAVEL * R * e;
       const rx = sx - cx, ry = sy - cy, d2 = rx * rx + ry * ry;
       if (d2 > 2.25 * r2) continue;
-      const d = Math.sqrt(d2) || 1, k = Math.exp(-2 * d2 / r2) * (1 - e) * (1 - e) * WAKE.push * f;
+      // the dust's heavier damping (dustC) would stop a wake's push sooner; scale it so a dot travels as far as before
+      const boost = P.amb[i] ? dustC[i] / 0.1 : 1;
+      const d = Math.sqrt(d2) || 1, k = Math.exp(-2 * d2 / r2) * (1 - e) * (1 - e) * WAKE.push * f * boost;
       const ux = rx / d, uy = ry / d;
       if (w.dx || w.dy) { vx[i] += (w.dx * 0.7 + ux * 0.3) * k; vy[i] += (w.dy * 0.7 + uy * 0.3) * k; }
       else { vx[i] += (ux * 0.5 - uy * 0.5) * k; vy[i] += (uy * 0.5 + ux * 0.5) * k; }
     }
   }
-  // The hover is a bow wave: a soft patch (Gaussian, no rim) that the dots move out of. Moving, it stretches ahead
-  // along the way the cursor goes, dots parting to either side and filling back in behind. Parked, it shrinks to a
-  // small clear hole that holds still; when the cursor leaves, the dots fill it back in.
-  // It moves where a dot rests, not the dot: each dot's spring target is offset by a field measured from the target
-  // itself, so a dot settles at its new place. History, all 2026-10-03: a push on velocity pulsed under a parked
-  // cursor (pushed out of reach, sprung back, pushed again); a smooth radial spread fixed that but was a magnifying
-  // lens ("it zooms in"); a moving-only wave fixed that but let the dots ignore a parked cursor. Now: a hole-shaped
-  // profile that is smooth at the centre, at every speed.
-  // `bow` holds the per-frame shape, set by bowShape() before simulate(); bowOffset() leaves its answer in OFF.
-  const bow = { on: false, x: 0, y: 0, ux: 0, uy: 0, e: 0, R: 0, A: 0 };
-  const OFF = { x: 0, y: 0 };
+  // The hover is a moving object, not a hole: while the cursor moves, any dot inside its small radius gets shoved
+  // out of the way, harder the faster it moves and the deeper the dot sits; still, it pushes nothing, and the dots'
+  // springs bring them home (the dust's are critically damped, see dustC, so they glide back without a bounce).
+  // History, all 2026-10-03: a standing hole around the cursor, in every form tried (velocity push, target offsets,
+  // a lens, a fixed-size hole), either pulsed, zoomed, or kept the dust "expanded"; David wanted dots pushed only by
+  // a cursor in motion, only where it touches them.
+  // `bow` holds the per-frame cursor, set by bowShape() before simulate().
+  const bow = { on: false, x: 0, y: 0, ux: 0, uy: 0, sp: 0, R: 0 };
   function bowShape(hr) {
-    bow.on = view.hover;
+    const sp = Math.hypot(view.hvx, view.hvy);
+    bow.on = view.hover && sp > BOW.min;
+    bow.R = hr * BOW.size; // one size at every speed
     if (!bow.on) return;
-    const sp = Math.hypot(view.hvx, view.hvy), e = Math.min(1, sp / BOW.speed);
-    bow.x = view.px; bow.y = view.py; bow.e = e;
-    bow.ux = sp > 0.01 ? view.hvx / sp : 0; bow.uy = sp > 0.01 ? view.hvy / sp : 0;
-    bow.R = hr * (BOW.still + (1 - BOW.still) * e);
-    bow.A = bow.R * BOW.depth; // how far it moves the dots it covers: a parked cursor keeps a small clear hole
+    bow.x = view.px; bow.y = view.py; bow.sp = Math.min(sp, BOW.speed);
+    bow.ux = view.hvx / sp; bow.uy = view.hvy / sp;
   }
-  function bowOffset(sx, sy) {
-    OFF.x = OFF.y = 0;
-    const dx = sx - bow.x, dy = sy - bow.y, { ux, uy, e, R } = bow;
-    const a = dx * ux + dy * uy, b = dy * ux - dx * uy; // along the motion (ahead > 0), and across it
-    const al = a / (R * (a > 0 ? 1 + 0.8 * e : 1 - 0.4 * e)), ac = b / (R * (1 + 0.15 * e));
-    const n2 = al * al + ac * ac;
-    if (n2 > 2.25) return;
-    // A hole, not a lens: the push is near full strength a short way out (core: 0.3 R) and fades with the Gaussian,
-    // so dots clear out of the middle instead of all spreading in proportion. It still falls to zero at the exact
-    // centre, so a target drifting across it moves smoothly. Directions: out from the cursor, parted sideways
-    // across the motion, and a little forward for the dots ahead.
-    const d = Math.hypot(dx, dy) || 1, core = 0.3 * R;
-    const m = (1 - Math.exp(-(d * d) / (core * core))) * Math.exp(-1.6 * n2) * bow.A;
-    const side = Math.max(-1, Math.min(1, b / core)), fwd = a > 0 ? 0.3 * e : 0;
-    OFF.x = (dx / d * (1 - 0.5 * e) - uy * side * 0.6 * e + ux * fwd) * m;
-    OFF.y = (dy / d * (1 - 0.5 * e) + ux * side * 0.6 * e + uy * fwd) * m;
+  function bowPush(i, sx, sy, f) {
+    const dx = sx - bow.x, dy = sy - bow.y, d2 = dx * dx + dy * dy, R = bow.R;
+    if (d2 >= R * R) return;
+    // out from the cursor, carried a little along its motion; the deeper inside, the harder. The dust's heavier
+    // damping would stop the shove sooner, so it gets the same boost as the wakes and travels as far.
+    const d = Math.sqrt(d2) || 1, over = 1 - d / R;
+    const k = over * over * bow.sp * BOW.push * f * (P.amb[i] ? dustC[i] / 0.1 : 1);
+    vx[i] += (dx / d + bow.ux * 0.5) * k; vy[i] += (dy / d + bow.uy * 0.5) * k;
   }
-  // each wake nudges the dots it covers
+  // the moving cursor shoves the dots it touches; each wake nudges the dots it covers
   function push(i, f) {
-    if (wakes.length) wakePush(i, x[i], y[i] + (P.amb[i] ? 0 : view.so), f);
+    const sy = y[i] + (P.amb[i] ? 0 : view.so); // where the dot is on screen
+    if (bow.on) bowPush(i, x[i], sy, f);
+    if (wakes.length) wakePush(i, x[i], sy, f);
   }
 
   // moves every dot one step; returns the fastest dot's speed, in px per 60th of a second
@@ -242,12 +245,12 @@ window.LAB = window.LAB || {};
         }
         continue;
       }
-      let ax = P.tx[i] + Math.sin(t * 0.4 + wob[i]) * (P.amb[i] ? DRIFT : 0.6); // shape dots barely breathe, so grids stay crisp
-      let ay = P.ty[i] + Math.cos(t * 0.33 + wob[i]) * (P.amb[i] ? DRIFT : 0.6);
-      if (bow.on) { bowOffset(ax, ay + (P.amb[i] ? 0 : view.so)); ax += OFF.x; ay += OFF.y; }
+      const ax = P.tx[i] + Math.sin(t * 0.4 + wob[i]) * (P.amb[i] ? DRIFT : 0.6); // shape dots barely breathe, so grids stay crisp
+      const ay = P.ty[i] + Math.cos(t * 0.33 + wob[i]) * (P.amb[i] ? DRIFT : 0.6);
       const k = P.fast[i] ? 0.2 : stiff[i]; // the ball and the ping keep up with their targets
-      vx[i] = (vx[i] + (ax - x[i]) * k * f) * damp;
-      vy[i] = (vy[i] + (ay - y[i]) * k * f) * damp;
+      const dd = P.amb[i] ? Math.pow(1 - dustC[i], f) : damp; // dust settles without a bounce (see dustC)
+      vx[i] = (vx[i] + (ax - x[i]) * k * f) * dd;
+      vy[i] = (vy[i] + (ay - y[i]) * k * f) * dd;
       push(i, f);
       x[i] += vx[i] * f; y[i] += vy[i] * f;
       const v = Math.abs(vx[i]) + Math.abs(vy[i]);
@@ -295,6 +298,12 @@ window.LAB = window.LAB || {};
     setStop(id, g, so) { const handoff = id !== stopId; stopId = id; if (g) geo = g; build(so, handoff); if (reduce) { snap(); render(); } },
     setOffset(v) { if (!reduce && v !== view.so) { view.so = v; wake(); } }, // scroll the shape with its stage
     wakeCount: () => wakes.length, // for tests
+    bowRadius: () => (bow.on ? bow.R : 0), // for tests
+    distances(px, py, ids) { // for tests: each listed dot's screen distance from a point, or every dot's if no list
+      const out = [];
+      for (const i of ids || Array.from({ length: N }, (_, k) => k)) out.push([i, Math.hypot(x[i] - px, y[i] + (P.amb[i] ? 0 : view.so) - py)]);
+      return out;
+    },
     countNear(px, py, r) { // for tests: how many dots sit within r of a screen point
       let n = 0;
       for (let i = 0; i < N; i++) { const dx = x[i] - px, dy = y[i] + (P.amb[i] ? 0 : view.so) - py; if (dx * dx + dy * dy < r * r) n++; }

@@ -53,14 +53,17 @@
   --dot-lit: 3.2;
   --dot-phone: 2.2;
   --dot-lit-phone: 3;
+  /* dots are round: a disc's diameter next to the square it replaced. 1.13 gives the same area (a disc as wide
+     covers 79%), so the field is as bright as it was with squares. */
+  --dot-round: 1.13;
   --dust: 0.45;
   /* field motion. pace scales the shapes' clock (helix turn, fork, motif loops; 1 = the speed before 2026-10-03).
-     drift: px the dust wanders. dpr: canvas resolution cap, mouse vs touch screens (a 3x phone fills 4x the pixels
-     of 1.5x for dots too small to show the difference). */
+     drift: px the dust wanders. dpr: canvas resolution cap, mouse vs touch screens. Touch was 1.5 until 2026-10-03,
+     when the 2x upscale on a 3x phone read as blocky; 3 kept 120 fps with no dropped frames at 4x CPU throttle. */
   --field-pace: 0.6;
   --field-drift: 12;
   --field-dpr: 2;
-  --field-dpr-touch: 1.5;
+  --field-dpr-touch: 3;
   /* the wake a tap or click leaves: radius as a fraction of the screen's short side, push strength, lifetime.
      A touch counts as a tap only if it moves under tap-slop px and lifts within tap-time. A swipe leaves a trail
      instead: one wake every wake-trail-gap radii of finger travel, at most wake-max alive at once. */
@@ -71,14 +74,19 @@
   --tap-time: 300ms;
   --wake-trail-gap: 0.6;
   --wake-max: 12;
-  /* the hover's bow wave (mouse only), only while the cursor moves: at bow-speed px per 60th of a second it is full
-     size and strength, stretched along the motion; slower, it shrinks toward bow-still of its size and fades, and a
-     parked cursor leaves no dent. bow-ease: how fast it turns and fades, per frame. bow-depth: how far it moves the
-     dots it covers, as a fraction of its size, at full speed. */
+  /* the hover (mouse only): while the cursor moves faster than bow-min px per 60th of a second, it shoves the dots
+     inside its radius (bow-size of 130 px desktop, 80 px phone layout) out of the way, harder the faster it goes up
+     to bow-speed and the deeper the dot sits; bow-push scales the shove. Still, it pushes nothing.
+     bow-ease: how fast the cursor's measured velocity follows it, per frame. */
   --bow-speed: 12;
-  --bow-still: 0.55;
+  --bow-size: 0.7;
   --bow-ease: 0.25;
-  --bow-depth: 0.6;
+  --bow-push: 0.3;
+  --bow-min: 0.3;
+  /* the dust's springs: damping = dust-damping x sqrt(stiffness) per 60th of a second. 2 is critical: a disturbed
+     dot glides home with no overshoot instead of ringing. Measured 2026-10-03 as in-out reversals per dust dot in the
+     3 s after a hover sweep stops: 4.3 at the old shared damping, 1.4 at 1.5, 1.25 at 2 (1 is a single glide home). */
+  --dust-damping: 2;
   /* flick to spin the helix (helix.js). sens: rad/s for a swipe of one stage width per second, so a phone and a
      desktop feel alike; 12 keeps the near side about under the pointer (the helix's radius is ~1/15 of the stage).
      cap: the fastest spin, rad/s. Screenshots 2026-10-03, worst moment just after a flick: desktop 4 thick strands,
