@@ -25,7 +25,8 @@ html { scrollbar-color: var(--ember) var(--bg); scrollbar-width: thin; }
   z-index: 0;
   pointer-events: none;
 }
-main { position: relative; z-index: 1; }
+/* the page's landmarks sit side by side in body, each lifted above the fixed field */
+body > header, main, body > footer { position: relative; z-index: 1; }
 
 .skip {
   position: absolute; left: var(--gutter); top: -100px;

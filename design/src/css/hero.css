@@ -7,6 +7,10 @@
   font-size: var(--step--1); color: var(--ink-dim);
 }
 .hero__mark { margin: 0; font: inherit; color: var(--ink); }
+/* the wordmark with the lab link beside it; .lablink is the same link again in the footer */
+.hero__left { display: flex; align-items: baseline; gap: var(--space-3); }
+.lablink { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink-dim); text-decoration: none; transition: color var(--t-fast); }
+.lablink:hover { color: var(--ember-soft); }
 /* David's line: a quote off to the side in his own voice, not a headline. The helix stands left of centre, so on wide
    screens the line floats in the hero's right side; on phones it sits above the helix. */
 .hero { position: relative; }

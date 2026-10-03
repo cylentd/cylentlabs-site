@@ -30,7 +30,13 @@
   "card": {
     "use": "Use it",
     "how": "How it's built",
-    "in_design": "In design"
+    "in_design": "In design",
+    "pause": "Pause clip"
+  },
+  "missing": {
+    "title": "Page not found",
+    "line": "nothing cooking at this address.",
+    "home": "back home"
   },
   "foot": {
     "to_top": "Back to top"

@@ -3,6 +3,7 @@ import json
 import pathlib
 import re
 import sys
+from html.parser import HTMLParser
 
 import pytest
 
@@ -133,3 +134,70 @@ def test_built_page_landmarks():
     assert "{{" not in page
     for name in build.JS:
         assert "</script>" not in (SRC / "js" / f"{name}.js").read_text(encoding="utf-8")
+
+
+class Landmarks(HTMLParser):
+    """Records each header and footer start tag with whether it sits inside <main>."""
+    def __init__(self):
+        super().__init__()
+        self.depth, self.found = 0, []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "main":
+            self.depth += 1
+        elif tag in ("header", "footer"):
+            self.found.append((tag, self.depth > 0))
+
+    def handle_endtag(self, tag):
+        if tag == "main":
+            self.depth -= 1
+
+
+def landmarks(page):
+    p = Landmarks()
+    p.feed(page)
+    return p.found
+
+
+def built_pages():
+    page, _ = build.build()
+    pages = {"index.html": page, "404.html": build.build_missing(COPY, DATA)}
+    pages.update(build.build_lab(COPY, DATA, build.load_posts()))
+    return pages
+
+
+# a header inside <main> is not a banner, a footer there not contentinfo
+def test_header_and_footer_sit_outside_main_on_every_page():
+    for name, page in built_pages().items():
+        found = landmarks(page)
+        assert {t for t, _ in found} == {"header", "footer"}, name
+        assert not any(inside for _, inside in found), name
+        assert page.count("<main") == 1, name
+
+
+# WCAG 2.2.2: anything that loops gets a pause control
+def test_every_clip_has_a_pause_control():
+    page, _ = build.build()
+    figures = re.findall(r'<figure class="chapter__show">(.*?)</figure>', page)
+    videos = [f for f in figures if "<video" in f]
+    assert len(videos) == sum(1 for p in DATA["projects"] for c in p["clips"] if c.get("src"))
+    for f in videos:
+        assert 'class="chapter__pause" aria-pressed="false"' in f
+        assert f'aria-label="{COPY["card"]["pause"]}"' in f and " hidden>" in f  # demos.js unhides it unless reduced motion
+    assert all("chapter__pause" not in f for f in figures if "<video" not in f)
+
+
+# the rail is reached before the chapters by keyboard, not after the footer
+def test_rail_precedes_the_chapters():
+    page, _ = build.build()
+    assert page.index('class="rail"') < page.index('id="projects"')
+
+
+# the browser bar colour is the --bg token, not a second copy of it
+def test_theme_color_comes_from_the_bg_token():
+    tokens = (SRC / "css" / "tokens.css").read_text(encoding="utf-8")
+    bg = re.search(r"--bg:\s*([^;]+);", tokens).group(1).strip()
+    for name, page in built_pages().items():
+        assert f'<meta name="theme-color" content="{bg}">' in page, name
+    for shell in ("shell.html", "lab.html"):
+        assert not LITERAL.search((SRC / shell).read_text(encoding="utf-8")), shell

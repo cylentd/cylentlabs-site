@@ -53,6 +53,11 @@ def meta(site, copy, path, title, description, kind="website"):
     return "\n".join(tags)
 
 
+def meta_noindex(title):
+    """The not-found page's head: a title, kept out of search, and no canonical (it answers at any missing path)."""
+    return f'<title>{esc(title)}</title>\n<meta name="robots" content="noindex">'
+
+
 def hue(pid):
     # ids are checked against a fixed set by the contract, so this only ever names a token
     return f'style="--hue: var(--hue-{esc(pid)})"'
@@ -97,18 +102,21 @@ def motif_labels(p):
     )
 
 
-def shows(p):
+def shows(p, copy):
     """One or two phones, side by side; on a narrow screen the second peeks in and swipes."""
-    return f'<div class="chapter__shows" data-count="{len(p["clips"])}">{"".join(show(c) for c in p["clips"])}</div>'
+    return f'<div class="chapter__shows" data-count="{len(p["clips"])}">{"".join(show(c, copy) for c in p["clips"])}</div>'
 
 
-def show(c):
-    """The project's own screen at phone size. A clip plays muted on a loop; its poster is the reduced-motion still."""
+def show(c, copy):
+    """The project's own screen at phone size. A clip plays muted on a loop, with a pause button that demos.js unhides
+    (WCAG 2.2.2); its poster is the reduced-motion still, so there the button stays hidden."""
     alt = esc(c["alt"])
     if c.get("src"):
         media = (
             f'<video class="chapter__demo" src="{esc(c["src"])}" poster="{esc(c["poster"])}" width="390" height="844" '
             f'muted loop playsinline preload="none" aria-label="{alt}"></video>'
+            f'<button type="button" class="chapter__pause" aria-pressed="false" aria-label="{esc(copy["pause"])}" hidden>'
+            f'<span aria-hidden="true"></span></button>'
         )
     else:  # a landscape still in the portrait frame: `focus` says which part of it to keep
         focus = f' style="object-position: {esc(c["focus"])}"' if c.get("focus") else ""
@@ -151,7 +159,7 @@ def chapter(p, copy):
         f'      <h2>{esc(p["name"])}</h2>\n'
         f'      <p class="chapter__hook">{esc(p["hook"])}</p>\n'
         f'    </div>\n'
-        f'    {shows(p)}\n'
+        f'    {shows(p, copy)}\n'
         f'    <div class="chapter__text">\n'
         f'      {headline(p)}\n'
         f'      <div class="chapter__links">{"".join(links)}</div>\n'

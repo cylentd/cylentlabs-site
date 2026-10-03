@@ -65,6 +65,16 @@ def test_lab_pages_build():
     assert "<h2>What broke</h2>" in pages["lab/a-note/index.html"]
 
 
+def test_not_found_page_builds():
+    html = build.build_missing(COPY, DATA)
+    assert "{{" not in html
+    assert '<meta name="robots" content="noindex">' in html
+    assert 'rel="canonical"' not in html and "og:url" not in html  # it answers at any path, so it claims none
+    assert html.count('href="/"') >= 2  # the wordmark and the way back home
+    assert 'href="/lab/"' in html
+    assert COPY["missing"]["line"] in html and html.count("<h1") == 1
+
+
 def test_empty_lab_says_so():
     assert COPY["lab"]["empty"] in build.build_lab(COPY, DATA, [])["lab/index.html"]
 

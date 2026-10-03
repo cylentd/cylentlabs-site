@@ -97,6 +97,15 @@ def index(posts, copy):
     )
 
 
+def missing(copy, lab_copy):
+    """The not-found page's body: one line, then home and the notes. `copy` is content.json's missing group."""
+    return (
+        f'<h1 class="lab__h1">{esc(copy["line"])}</h1>'
+        f'<p class="missing__links"><a class="lablink" href="/">{esc(copy["home"])}</a>'
+        f'<a class="lablink" href="/lab/">{esc(lab_copy["nav"])}</a></p>'
+    )
+
+
 def post(p, copy):
     tag = f'<span class="lab__tag">{esc(copy["draft"])}</span>' if p["draft"] else ""
     return (

@@ -7,7 +7,8 @@ COPY_KEYS = {
     "hero": {"wordmark", "name", "email_label", "github_label", "linkedin_label", "names_label", "quote"},
     "rail": {"label"},
     "lab": {"nav", "intro", "empty", "index_title", "description", "back", "home", "draft"},
-    "card": {"use", "how", "in_design"},
+    "card": {"use", "how", "in_design", "pause"},
+    "missing": {"title", "line", "home"},
     "foot": {"to_top"},
 }
 

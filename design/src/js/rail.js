@@ -22,7 +22,13 @@
   pill.addEventListener("click", () => pill.setAttribute("aria-expanded", String(pill.getAttribute("aria-expanded") !== "true")));
   links.forEach((a) => a.addEventListener("click", close));
   document.addEventListener("click", (e) => { if (!rail.contains(e.target)) close(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+  // Escape closes the open list; focus inside it would be left on a hidden link, so it goes back to the pill
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || pill.getAttribute("aria-expanded") !== "true") return;
+    const inside = rail.contains(document.activeElement);
+    close();
+    if (inside) pill.focus();
+  });
   // the footer's wordmark sits where the phone pill does: step aside while it is on screen
   const foot = document.querySelector(".foot");
   if (foot) new IntersectionObserver(([e]) => { rail.classList.toggle("is-off", e.isIntersecting); if (e.isIntersecting) close(); }).observe(foot);

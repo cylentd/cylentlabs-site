@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {{meta}}
-<meta name="theme-color" content="#07090c">
+<meta name="theme-color" content="{{theme_color}}">
 <link rel="icon" href="assets/icon/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icon/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icon/apple-touch-icon.png">
@@ -18,33 +18,33 @@
 <body data-active="hero">
 <a class="skip" href="#projects">{{site.skip}}</a>
 <canvas id="field" class="field" aria-hidden="true"></canvas>
+<header class="hero" id="top" data-stop="hero">
+  <div class="hero__bar">
+    <div class="hero__left">
+      <h1 class="hero__mark">{{hero.wordmark}}</h1>
+      <a class="lablink" href="/lab/">{{lab.nav}}</a>
+    </div>
+    {{contact_links}}
+  </div>
+  <p class="hero__quote">{{hero.quote}}</p>
+  <div class="helix js-wait">
+    <div class="helix__stage" aria-hidden="true"></div>
+    {{names}}
+  </div>
+</header>
+{{rail}}
 <main>
-  <header class="hero" id="top" data-stop="hero">
-    <div class="hero__bar">
-      <div class="hero__left">
-        <h1 class="hero__mark">{{hero.wordmark}}</h1>
-        <a class="lablink" href="/lab/">{{lab.nav}}</a>
-      </div>
-      {{contact_links}}
-    </div>
-    <p class="hero__quote">{{hero.quote}}</p>
-    <div class="helix js-wait">
-      <div class="helix__stage" aria-hidden="true"></div>
-      {{names}}
-    </div>
-  </header>
   <div id="projects">
 {{chapters}}
   </div>
-  <footer class="foot">
-    <div class="foot__row">
-      <a class="foot__mark" href="#top">{{hero.wordmark}}</a>
-      <a class="lablink" href="/lab/">{{lab.nav}}</a>
-      {{contact_links}}
-    </div>
-  </footer>
 </main>
-{{rail}}
+<footer class="foot">
+  <div class="foot__row">
+    <a class="foot__mark" href="#top">{{hero.wordmark}}</a>
+    <a class="lablink" href="/lab/">{{lab.nav}}</a>
+    {{contact_links}}
+  </div>
+</footer>
 <a class="to-top" href="#top" aria-label="{{foot.to_top}}" hidden>{{arrow_up}}</a>
 <script>
 {{js}}

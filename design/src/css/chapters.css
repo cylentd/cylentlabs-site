@@ -25,11 +25,32 @@
   border: 1px solid var(--line); border-radius: 22px; overflow: hidden; background: var(--bg-lift);
 }
 .chapter__show video, .chapter__show img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: inherit; }
+/* pause and play (demos.js shows it; reduced motion keeps it hidden with the still): a 44px target around a small
+   dim chip in the clip's corner, so it stays out of the screen's way */
+.chapter__show { position: relative; }
+.chapter__pause {
+  position: absolute; right: var(--space-1); bottom: var(--space-1);
+  display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
+  border: 0; border-radius: 50%; background: none; color: var(--ink); cursor: pointer;
+}
+.chapter__pause::before {
+  content: ""; position: absolute; inset: 8px; border: 1px solid var(--line); border-radius: 50%;
+  background: var(--bg); opacity: 0.72; transition: opacity var(--t-fast);
+}
+.chapter__pause:hover::before { opacity: 0.92; }
+.chapter__pause:focus-visible { outline-offset: -4px; border-radius: 50%; }
+/* the glyph: two bars while it plays, a triangle once held */
+.chapter__pause span { position: relative; width: 10px; height: 11px; border-inline: 3px solid currentColor; }
+.chapter__pause[aria-pressed="true"] span {
+  width: 10px; border: 0; background: currentColor; clip-path: polygon(10% 0, 100% 50%, 10% 100%);
+}
 /* on a wide screen the clip sits in a thin phone outline */
 @media (min-width: 700px) {
   .chapter__show { padding: 9px; border-radius: 40px; }
   .chapter__show video, .chapter__show img { border-radius: 31px; }
+  .chapter__pause { right: var(--space-3); bottom: var(--space-3); }
 }
+@media (prefers-reduced-motion: reduce) { .chapter__pause::before { transition: none; } }
 
 .chapter__head { width: min(100%, 40rem); margin-top: var(--space-3); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
 .chapter__text { width: min(100%, 40rem); margin-top: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
@@ -50,6 +71,7 @@
 .chapter__built li + li { margin-top: var(--space-1); }
 .chapter__built li::marker { color: var(--hue); }
 @keyframes built-in { from { opacity: 0; transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .chapter__built { animation: none; } }
 
 .btn {
   display: inline-flex; align-items: center; min-height: 44px;

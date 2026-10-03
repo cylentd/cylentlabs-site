@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {{meta}}
-<meta name="theme-color" content="#07090c">
+<meta name="theme-color" content="{{theme_color}}">
 <link rel="icon" href="/assets/icon/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/assets/icon/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="/assets/icon/apple-touch-icon.png">
@@ -15,20 +15,18 @@
 </style>
 </head>
 <body class="labpage">
-<main>
-  <header class="hero__bar labpage__bar">
-    <a class="hero__mark" href="/">{{lab.home}}</a>
-    {{contact_links}}
-  </header>
-  <div class="labpage__body">
+<header class="hero__bar labpage__bar">
+  <a class="hero__mark" href="/">{{lab.home}}</a>
+  {{contact_links}}
+</header>
+<main class="labpage__body">
 {{body}}
-  </div>
-  <footer class="foot">
-    <div class="foot__row">
-      <a class="foot__mark" href="/">{{lab.home}}</a>
-      {{contact_links}}
-    </div>
-  </footer>
 </main>
+<footer class="foot">
+  <div class="foot__row">
+    <a class="foot__mark" href="/">{{lab.home}}</a>
+    {{contact_links}}
+  </div>
+</footer>
 </body>
 </html>
