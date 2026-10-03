@@ -26,7 +26,10 @@ window.LAB = window.LAB || {};
   }
   const queue = (remeasure) => { if (!queued) { queued = true; requestAnimationFrame(() => update(remeasure === true)); } };
   addEventListener("scroll", queue, { passive: true });
-  addEventListener("resize", () => queue(true));
+  addEventListener("resize", queue); // the 62% line moves with the window height; the boxes only move on lab:layout
+  // lab:layout: the boxes moved (field.js once a resize settles, built.js on a toggle). Re-measuring rebuilds the
+  // shape, so cancelling the event tells field.js not to rebuild it a second time.
+  addEventListener("lab:layout", (e) => { e.preventDefault(); queue(true); });
   // web fonts change the layout after first paint; measure the boxes again once they are in
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => queue(true));
   update(true);
