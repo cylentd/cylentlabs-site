@@ -3,7 +3,7 @@ import re
 
 SHAPE_IDS = {"jarvis", "teamwatch", "tcg", "seat", "lock"}  # one per shape in design/src/js/shapes.js
 COPY_KEYS = {
-    "site": {"title", "description", "skip"},
+    "site": {"title", "description", "skip", "preview_alt"},
     "hero": {"wordmark", "name", "email_label", "github_label", "linkedin_label", "names_label", "quote"},
     "rail": {"label"},
     "lab": {"nav", "intro", "empty", "index_title", "description", "back", "home", "draft"},
@@ -25,7 +25,8 @@ def check_copy(copy):
 
 
 def check_projects(data):
-    need({"contact", "projects", "factsAsOf"} <= set(data), "projects.json: needs contact, projects, factsAsOf")
+    need({"contact", "projects", "factsAsOf", "siteUrl", "previewImage"} <= set(data), "projects.json: needs contact, projects, factsAsOf, siteUrl, previewImage")
+    need(re.fullmatch(r"https://[^/\s]+", data["siteUrl"]), "projects.json: siteUrl must be https://host with no trailing slash")
     for k in ("linkedin", "github"):
         v = data["contact"].get(k)
         need(v is None or str(v).startswith("https://"), f"projects.json: contact.{k} must be null or https")

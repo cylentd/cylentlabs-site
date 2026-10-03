@@ -34,6 +34,25 @@ def date_label(iso):
     return f"{MONTHS[mth - 1]} {d}, {y}"
 
 
+def meta(site, copy, path, title, description, kind="website"):
+    """The head tags a search result and a link preview read: title, description, canonical URL, and an Open Graph and
+    Twitter card. `site` holds siteUrl and previewImage from projects.json, `copy` is content.json's site group, and
+    `path` is the page's own, like /lab/."""
+    url = site["siteUrl"] + path
+    image = f'{site["siteUrl"]}/{site["previewImage"]}'
+    tags = [
+        f"<title>{esc(title)}</title>",
+        f'<meta name="description" content="{esc(description)}">',
+        f'<link rel="canonical" href="{esc(url)}">',
+    ]
+    image_alt = copy["preview_alt"]
+    og = {"type": kind, "site_name": copy["title"], "title": title, "description": description, "url": url,
+          "image": image, "image:width": 1200, "image:height": 630, "image:alt": image_alt}
+    tags += [f'<meta property="og:{k}" content="{esc(v)}">' for k, v in og.items()]
+    tags.append('<meta name="twitter:card" content="summary_large_image">')
+    return "\n".join(tags)
+
+
 def hue(pid):
     # ids are checked against a fixed set by the contract, so this only ever names a token
     return f'style="--hue: var(--hue-{esc(pid)})"'

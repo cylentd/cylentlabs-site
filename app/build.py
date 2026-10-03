@@ -31,15 +31,18 @@ def build_lab(copy, data, posts):
     contact = render.contact_links(data["contact"], copy["hero"], icons())
     css = "\n".join(read(SRC / "css" / f"{n}.css") for n in LAB_CSS)
     shell = read(SRC / "lab.html")
-    raw = {"css", "body", "contact_links"}
+    raw = {"meta", "css", "body", "contact_links"}
 
-    def page(title, description, body):
-        return render.fill(shell, dict(copy, title=title, description=description, css=css, body=body, contact_links=contact), raw=raw)
+    def page(path, title, description, body, kind="website"):
+        head = render.meta(data, copy["site"], path, title, description, kind)
+        return render.fill(shell, dict(copy, meta=head, css=css, body=body, contact_links=contact), raw=raw)
 
     c = copy["lab"]
-    pages = {"lab/index.html": page(f'{c["index_title"]} · {copy["site"]["title"]}', c["description"], lab.index(posts, c))}
+    pages = {"lab/index.html": page("/lab/", f'{c["index_title"]} · {copy["site"]["title"]}', c["description"], lab.index(posts, c))}
     for p in posts:
-        pages[f'lab/{p["slug"]}/index.html'] = page(f'{p["title"]} · {copy["site"]["title"]}', p["summary"], lab.post(p, c))
+        pages[f'lab/{p["slug"]}/index.html'] = page(
+            f'/lab/{p["slug"]}/', f'{p["title"]} · {copy["site"]["title"]}', p["summary"], lab.post(p, c), "article"
+        )
     return pages
 
 
@@ -56,6 +59,7 @@ def build():
 
     values = dict(
         copy,
+        meta=render.meta(data, copy["site"], "/", copy["site"]["title"], copy["site"]["description"]),
         facts_asof=render.date_label(data["factsAsOf"]),
         arrow_up=read(SRC / "icons" / "arrow-up.svg").strip(),
         css="\n".join(read(SRC / "css" / f"{n}.css") for n in CSS),
@@ -65,7 +69,8 @@ def build():
         rail=render.section_nav(data["projects"], copy["rail"]),
         contact_links=render.contact_links(data["contact"], copy["hero"], icons()),
     )
-    raw = {"css", "js", "chapters", "names", "rail", "contact_links", "arrow_up"}
+    raw = {"meta", "css", "js", "chapters", "names", "rail", "contact_links", "arrow_up"}
+    checks.need((SRC / data["previewImage"]).is_file(), f"projects.json: previewImage {data['previewImage']} not found under design/src")
     for p in data["projects"]:
         for c in p["clips"]:
             for kind in ("src", "poster"):

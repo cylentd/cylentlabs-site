@@ -71,3 +71,18 @@ def test_empty_lab_says_so():
 def test_home_links_the_lab_twice():
     page, _ = build.build()
     assert page.count('class="lablink" href="/lab/"') == 2
+
+
+# every page carries its own canonical URL and a preview card with an absolute image URL
+def test_preview_cards():
+    page, _ = build.build()
+    site = DATA["siteUrl"]
+    assert f'<link rel="canonical" href="{site}/">' in page
+    assert f'<meta property="og:image" content="{site}/{DATA["previewImage"]}">' in page
+    assert '<meta name="twitter:card" content="summary_large_image">' in page
+    assert page.count("<title>") == 1
+    pages = build.build_lab(COPY, DATA, [lab.parse(POST, "a-note")])
+    assert f'<link rel="canonical" href="{site}/lab/">' in pages["lab/index.html"]
+    note = pages["lab/a-note/index.html"]
+    assert f'<meta property="og:url" content="{site}/lab/a-note/">' in note
+    assert '<meta property="og:type" content="article">' in note
