@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{site.title}}</title>
+<meta name="description" content="{{site.description}}">
+<meta name="theme-color" content="#07090c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+{{css}}
+</style>
+<noscript><style>.helix.js-wait .helix__names { visibility: visible; }</style></noscript>
+</head>
+<body data-active="hero">
+<a class="skip" href="#projects">{{site.skip}}</a>
+<canvas id="field" class="field" aria-hidden="true"></canvas>
+<main>
+  <header class="hero" id="top" data-stop="hero">
+    <div class="hero__bar">
+      <h1 class="hero__mark">{{hero.wordmark}}</h1>
+      {{contact_links}}
+    </div>
+    <p class="hero__quote">{{hero.quote}}</p>
+    <div class="helix js-wait">
+      <div class="helix__stage" aria-hidden="true"></div>
+      {{names}}
+    </div>
+  </header>
+  <div id="projects">
+{{chapters}}
+  </div>
+  <footer class="foot">
+    <div class="foot__row">
+      <a class="foot__mark" href="#top">{{hero.wordmark}}</a>
+      {{contact_links}}
+    </div>
+    <small>{{foot.asof}} {{facts_asof}}.</small>
+  </footer>
+</main>
+<a class="to-top" href="#top" aria-label="{{foot.to_top}}" hidden>{{arrow_up}}</a>
+<script>
+{{js}}
+</script>
+</body>
+</html>

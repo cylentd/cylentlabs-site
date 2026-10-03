@@ -1,17 +1,21 @@
 # Cylent Labs site: agent notes
 
-Portfolio at cylentlabs.com. One static page: a particle hero that re-forms into each project's shape as you scroll. Projects: ff-jarvis, seat-scout, Team Watch, Team Lock.
+Portfolio at cylentlabs.com. One static page: a particle DNA helix in the hero, then one chapter per project (ff-jarvis, Team Watch, Restock Watch, seat-scout, Team Lock), each with a small particle motif, the project's phone clips, and its links. The particles hand off from the helix to each chapter's motif as you scroll.
 
 ## Commands
 
 | Do | Run |
 |---|---|
-| Build | `python app/build.py` (writes `dist/index.html`) |
-| Test | `python -m pytest` |
+| Build | `python app/build.py` (writes `dist/`) |
+| Test | `python -m pytest` (the shape test needs Node) |
 | Preview | `python -m http.server 8010 --directory dist` then `http://localhost:8010/` |
-| Land | `git land` (no `land.ps1` yet). Code lands only on David's "land it" |
+| Land | Rebuild, commit `dist/`, then `git land`. Code lands only on David's "land it" |
 
 David opens pages himself. Never open a browser for him.
+
+## Deploy
+
+Vercel serves the committed `dist/` as a static site (framework Other, no build command, output `dist`). `dist/` is generated: never hand-edit it, rebuild it once at land time. cylentlabs.com's DNS is on Cloudflare, DNS only (grey cloud), because Cloudflare's proxy breaks Vercel's certificates.
 
 ## Layout (five kinds of file, never mixed)
 
@@ -19,14 +23,16 @@ David opens pages himself. Never open a browser for him.
 |---|---|
 | Structure | `design/src/shell.html` |
 | Style | `design/src/css/` (`tokens.css` holds every colour, space, type, motion value) |
-| Behaviour | `design/src/js/` (one concern per file) |
+| Behaviour | `design/src/js/` (one concern per file: `field.js` engine, `helix.js` hero, `shapes.js` motifs) |
 | Copy | `design/src/content.json` (every user-facing string, keyed) |
-| Data | `data/projects.json` (cards, live numbers) |
+| Data | `data/projects.json` (chapters, clips, links, headline numbers) |
 
 `app/build.py` joins them. `contracts/` checks `content.json` and `projects.json` on the way in.
 
 ## Rules
 
-- **Art comes from the male boards only** (QBCutins, WRCutins, QBFull, WRFull in the Team Lock storyboard). Never copy anything from the "Art (Alt)" page. Originals stay in `C:/Users/David/team-lock-work/`; the repo holds optimized webp copies only.
+- **Numbers are results or nothing.** A headline number must be a real, dated result from the project's own data. Builder stats go under How it's built.
+- **Team Lock art:** only the approved male QB and WR boards, as optimized webp copies. Originals stay outside the repo.
+- Phone clips are recorded at 390x844 and must show real, current-looking content; say in the commit when a clip is edited (sped up, items hidden, snapshot data).
 - Vercel Hobby is non-commercial. Upgrade before taking client work.
-- Reduced motion and phones get a still frame and fewer particles. Verify at 360px first.
+- Verify at 360px first. Reduced motion gets still frames.

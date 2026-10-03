@@ -1,0 +1,83 @@
+/* One chapter per project, all in one centred column: its motif (drawn by the field), the project's own screen at
+   phone size, then the words. The showcase is always the biggest thing; the motif stays smaller than it. */
+.chapter {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: var(--space-5) var(--gutter) var(--space-6);
+}
+.chapter__motif { position: relative; width: min(64vw, var(--motif-w)); aspect-ratio: 18 / 7; }
+.chapter__motif span {
+  position: absolute; bottom: -4px; transform: translateX(-50%);
+  font-size: var(--step--1); color: var(--ink-dim); white-space: nowrap;
+}
+.chapter__motif span.is-lit { color: var(--hue); }
+
+/* one to three phones side by side; on a narrow screen, several become a swipeable row with the next peeking in */
+.chapter__shows { margin-top: var(--space-3); display: flex; justify-content: center; gap: var(--space-4); }
+@media (max-width: 999px) {
+  .chapter__shows:not([data-count="1"]) {
+    align-self: stretch; margin-inline: calc(-1 * var(--gutter)); padding-inline: max(11vw, calc(50vw - var(--show-w) / 2)); gap: var(--space-2);
+    justify-content: flex-start; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+  }
+  .chapter__shows:not([data-count="1"]) .chapter__show { flex: none; scroll-snap-align: center; }
+}
+.chapter__show {
+  margin: 0; width: min(78vw, var(--show-w), calc(74svh * 390 / 844)); aspect-ratio: 390 / 844;
+  border: 1px solid var(--line); border-radius: 22px; overflow: hidden; background: var(--bg-lift);
+}
+.chapter__show video, .chapter__show img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: inherit; }
+/* on a wide screen the clip sits in a thin phone outline */
+@media (min-width: 700px) {
+  .chapter__show { padding: 9px; border-radius: 40px; }
+  .chapter__show video, .chapter__show img { border-radius: 31px; }
+}
+
+.chapter__head { width: min(100%, 40rem); margin-top: var(--space-3); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.chapter__text { width: min(100%, 40rem); margin-top: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.chapter h2 { margin: 0; font: 400 var(--step-3) / 1 var(--font-display); }
+.chapter__hook { margin: 0; max-width: 34em; font-size: var(--step-1); color: var(--ink-dim); text-wrap: balance; }
+.chapter__num { margin: 0; display: flex; flex-direction: column; align-items: center; }
+.chapter__num strong { font: 400 var(--step-3) / 1.05 var(--font-display); color: var(--hue); }
+.chapter__num span { max-width: 26em; font-size: var(--step--1); color: var(--ink-dim); text-wrap: balance; }
+
+.chapter__links { position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--space-1); }
+.chapter__status { padding: 10px var(--space-2); font-size: var(--step--1); color: var(--hue); }
+.chapter__how[aria-expanded="true"] { border-color: var(--hue); color: var(--hue); }
+/* opens in the page's flow under the buttons: plain text in the column, no panel, nothing covered */
+.chapter__built { width: min(100%, 34rem); text-align: left; animation: built-in var(--t-slow) var(--ease-out); }
+.chapter__built[hidden] { display: none; }
+.chapter__stack { margin: 0 0 var(--space-2); color: var(--ink); }
+.chapter__built ul { margin: 0; padding-left: 1.1em; font-size: var(--step--1); color: var(--ink-dim); }
+.chapter__built li + li { margin-top: var(--space-1); }
+.chapter__built li::marker { color: var(--hue); }
+@keyframes built-in { from { opacity: 0; transform: translateY(-6px); } }
+
+.btn {
+  display: inline-flex; align-items: center; min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: var(--step--1);
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+.btn:hover { border-color: var(--ember); color: var(--ember-soft); }
+.btn--use { background: var(--ember); border-color: var(--ember); color: var(--bg); }
+.btn--use:hover { background: var(--ember-soft); border-color: var(--ember-soft); color: var(--bg); }
+
+/* footer: the wordmark (a link back to the top) and the contact icons on one row, the data date under them */
+.foot { position: relative; padding: var(--space-4) var(--gutter); background: var(--bg); border-top: 1px solid var(--line); }
+.foot__row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2); max-width: 1040px; margin: 0 auto; font-size: var(--step--1); }
+.foot__mark { color: var(--ink); text-decoration: none; }
+.foot__mark:hover { color: var(--ember-soft); }
+.foot small { display: block; max-width: 1040px; margin: var(--space-1) auto 0; color: var(--ink-dim); }
+
+/* back to top: a round button in the corner, shown by totop.js between the hero and the footer */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+.to-top {
+  position: fixed; z-index: 5; right: var(--gutter); bottom: var(--space-3);
+  display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+  border: 1px solid var(--line); border-radius: 50%; background: var(--bg-lift); color: var(--ink-dim);
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.to-top:hover { color: var(--ember-soft); border-color: var(--ember); }

@@ -1,0 +1,2 @@
+# dist/ is built by app/build.py and committed only at land time, for Vercel to serve. Never hand-edit it.
+dist/** linguist-generated=true -diff

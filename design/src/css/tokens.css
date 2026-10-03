@@ -1,0 +1,59 @@
+/* Every colour, space, type and motion value lives here. A literal anywhere else is a bug. */
+:root {
+  /* colour map: ember = the primary action, ink = text, bg = night, signal = background dust. Grey only for dimmed. */
+  --bg: #07090c;
+  --bg-lift: #0d1116;
+  --ink: #f3ede4;
+  --ink-dim: #8b8f96;
+  --ember: #ff7a3d;
+  --ember-soft: #ffb27a;
+  --signal: #6fa8d8;
+  --line: rgba(243, 237, 228, 0.14);
+
+  /* one hue per project: its rungs on the helix, its motif, its name. Order matches shapes.js L.HUES */
+  --hue-jarvis: #ff7a3d;
+  --hue-teamwatch: #6fa8d8;
+  --hue-tcg: #f2c14e;
+  --hue-seat: #4fc3b0;
+  --hue-lock: #b48cf0;
+
+  /* type */
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-body: "Hanken Grotesk", system-ui, sans-serif;
+  --step--1: 0.875rem;
+  --step-0: 1rem;
+  --step-1: 1.125rem;
+  --step-2: clamp(1.75rem, 1.3rem + 2vw, 2.75rem);
+  --step-3: clamp(2.5rem, 1.9rem + 2.6vw, 3.75rem);
+
+  /* space */
+  --gutter: 16px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 40px;
+  --space-5: 72px;
+  --space-6: 120px;
+  --radius: 14px;
+
+  /* sizes: the showcase is always the biggest thing in a chapter; the motif above it stays smaller */
+  --show-w: 300px;
+  --motif-w: 360px;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 160ms;
+  --t-slow: 700ms;
+  /* field: particle counts, sizes (px), and how faint the background dust is next to shape dots */
+  --field-count: 5200;
+  --field-count-phone: 1800;
+  --dot: 2;
+  --dot-lit: 3.2;
+  --dot-phone: 2.2;
+  --dot-lit-phone: 3;
+  --dust: 0.45;
+}
+
+@media (min-width: 900px) {
+  :root { --gutter: 48px; }
+}

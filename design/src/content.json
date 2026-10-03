@@ -1,0 +1,25 @@
+{
+  "site": {
+    "title": "cylent labs",
+    "description": "Tools that watch fantasy football, trading card restocks and IMAX seats, by David Luu. ff-jarvis, Restock Watch, seat-scout, Team Watch, Team Lock.",
+    "skip": "Skip to projects"
+  },
+  "hero": {
+    "wordmark": "cylent labs",
+    "name": "David Luu",
+    "email_label": "Email",
+    "github_label": "GitHub",
+    "linkedin_label": "LinkedIn",
+    "names_label": "Projects",
+    "quote": "welcome to my lab. let's cook."
+  },
+  "card": {
+    "use": "Use it",
+    "how": "How it's built",
+    "in_design": "In design"
+  },
+  "foot": {
+    "asof": "Numbers from each project's own data, as of",
+    "to_top": "Back to top"
+  }
+}
