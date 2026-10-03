@@ -2,6 +2,8 @@ import copy
 import json
 import pathlib
 import re
+import shutil
+import subprocess
 import sys
 from html.parser import HTMLParser
 
@@ -185,6 +187,63 @@ def test_every_clip_has_a_pause_control():
         assert 'class="chapter__pause" aria-pressed="false"' in f
         assert f'aria-label="{COPY["card"]["pause"]}"' in f and " hidden>" in f  # demos.js unhides it unless reduced motion
     assert all("chapter__pause" not in f for f in figures if "<video" not in f)
+
+
+# calm while scrolling: the timings are tokens, and the scripts read them rather than carrying their own numbers
+def test_scroll_calm_timings_are_tokens():
+    tokens = (SRC / "css" / "tokens.css").read_text(encoding="utf-8")
+    for name in ("--t-chrome-back", "--t-clip-settle"):
+        assert re.search(rf"{name}:\s*\d+ms;", tokens), name
+    ratio = float(re.search(r"--clip-in-view:\s*([\d.]+);", tokens).group(1))
+    assert 0.5 <= ratio <= 1
+    assert '"--t-chrome-back"' in (SRC / "js" / "rail.js").read_text(encoding="utf-8")
+    demos = (SRC / "js" / "demos.js").read_text(encoding="utf-8")
+    assert '"--clip-in-view"' in demos and '"--t-clip-settle"' in demos
+    # the phone chrome steps aside only below the wide-screen rail, and never while open or keyboard-focused
+    rail_css = (SRC / "css" / "rail.css").read_text(encoding="utf-8")
+    assert re.search(r"max-width: 1099px\)[^@]*data-scrolling[^{]*aria-expanded=\"true\"[^{]*:focus-visible", rail_css)
+
+
+# demos.js against a stub DOM: a clip waits for the scroll to settle, plays on until it leaves, and a held clip stays held
+DEMOS_HARNESS = r"""
+const fs = require("fs"), src = process.argv[2];
+let timers = new Map(), tid = 0, observer, scrollHandler;
+global.setTimeout = (f) => { timers.set(++tid, f); return tid; };
+global.clearTimeout = (id) => timers.delete(id);
+const settle = () => { const fs_ = [...timers.values()]; timers.clear(); fs_.forEach((f) => f()); };
+global.matchMedia = () => ({ matches: false });
+global.getComputedStyle = () => ({ getPropertyValue: (n) => ({ "--clip-in-view": " 0.6", "--t-clip-settle": " 280ms" })[n] });
+global.IntersectionObserver = class { constructor(cb, o) { this.cb = cb; this.o = o; observer = this; } observe() {} };
+const btn = { hidden: true, attrs: { "aria-pressed": "false" }, on: {},
+  getAttribute(k) { return this.attrs[k]; }, setAttribute(k, v) { this.attrs[k] = v; }, addEventListener(t, f) { this.on[t] = f; } };
+const v = { paused: true, dataset: {}, preload: "none", plays: 0,
+  play() { this.paused = false; this.plays++; return Promise.resolve(); }, pause() { this.paused = true; },
+  parentElement: { querySelector: () => btn } };
+global.document = { documentElement: {}, querySelectorAll: () => [v],
+  addEventListener: (t, f, o) => { if (t === "scroll" && o && o.capture) scrollHandler = f; } };
+eval(fs.readFileSync(src + "/demos.js", "utf8"));
+const see = (r) => observer.cb([{ target: v, isIntersecting: r > 0, intersectionRatio: r }]);
+const out = { thresholds: observer.o.threshold, unhidden: !btn.hidden };
+see(0.7); scrollHandler();                  // mostly on screen, but the thumb is still moving
+out.midScroll = v.paused;
+settle();                                   // still for --t-clip-settle
+out.settled = !v.paused;
+see(0.3); settle(); out.keepsPlaying = !v.paused; // drifting out, still partly on screen: no stop-start
+see(0); out.leftPaused = v.paused;
+btn.on.click(); see(1); settle(); out.heldStays = v.paused; // held by the button: scrolling back does not restart it
+btn.on.click(); out.unheld = !v.paused;
+see(0.4); see(0); see(0.4); settle(); out.partlyWaits = v.paused; // back on screen but under the bar: wait
+console.log(JSON.stringify(out));
+"""
+
+
+def test_a_clip_waits_for_the_scroll_to_settle():
+    if not shutil.which("node"):
+        pytest.skip("node not installed")
+    res = subprocess.run(["node", "-", str(SRC / "js")], input=DEMOS_HARNESS, capture_output=True, text=True, timeout=30, check=True)
+    out = json.loads(res.stdout)
+    assert out == {"thresholds": [0, 0.6], "unhidden": True, "midScroll": True, "settled": True, "keepsPlaying": True,
+                   "leftPaused": True, "heldStays": True, "unheld": True, "partlyWaits": True}, out
 
 
 # the rail is reached before the chapters by keyboard, not after the footer

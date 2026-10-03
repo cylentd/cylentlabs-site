@@ -77,16 +77,38 @@
   --t-slow: 700ms;
   /* field: particle counts, sizes (px), and how faint the background dust is next to shape dots */
   --field-count: 5200;
-  --field-count-phone: 1800;
+  --field-count-phone: 1500;
   --dot: 2;
   --dot-lit: 3.2;
   --dot-phone: 2.2;
   --dot-lit-phone: 3;
   --dust: 0.45;
+  /* field motion. pace scales the shapes' clock (helix turn, fork, motif loops; 1 = the speed before 2026-10-03).
+     drift: px the dust wanders. dpr: canvas resolution cap, mouse vs touch screens (a 3x phone fills 4x the pixels
+     of 1.5x for dots too small to show the difference). */
+  --field-pace: 0.6;
+  --field-drift: 12;
+  --field-dpr: 2;
+  --field-dpr-touch: 1.5;
+  /* the wake a tap or click leaves: radius as a fraction of the screen's short side, push strength, lifetime.
+     A touch counts as a tap only if it moves under tap-slop px and lifts within tap-time; a swipe leaves nothing. */
+  --wake-size: 0.16;
+  --wake-push: 1.5;
+  --wake-life: 900ms;
+  --tap-slop: 10;
+  --tap-time: 300ms;
 }
 
 @media (min-width: 900px) {
   :root { --gutter: 48px; }
+}
+
+/* calm while scrolling (rail.js, demos.js): the phone's corner chrome steps aside while the page moves and comes back
+   this long after it stops; a clip starts only once this much of it is on screen and scrolling has been still this long */
+:root {
+  --t-chrome-back: 600ms;
+  --t-clip-settle: 280ms;
+  --clip-in-view: 0.6;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -194,7 +216,7 @@ body:not([data-active="hero"]) .helix.is-placed .helix__names a { pointer-events
 .chapter__motif span.is-lit { color: var(--hue); }
 
 /* one to three phones side by side; on a narrow screen, several become a swipeable row with the next peeking in */
-.chapter__shows { margin-top: var(--space-3); display: flex; justify-content: center; gap: var(--space-4); }
+.chapter__shows { margin-top: var(--space-3); display: flex; justify-content: center; align-items: flex-start; gap: var(--space-4); }
 @media (max-width: 999px) {
   .chapter__shows:not([data-count="1"]) {
     align-self: stretch; margin-inline: calc(-1 * var(--gutter)); padding-inline: max(11vw, calc(50vw - var(--show-w) / 2)); gap: var(--space-2);
@@ -204,35 +226,36 @@ body:not([data-active="hero"]) .helix.is-placed .helix__names a { pointer-events
 }
 .chapter__show {
   margin: 0; width: min(78vw, var(--show-w), calc(74svh * 390 / 844)); aspect-ratio: 390 / 844;
-  border: 1px solid var(--line); border-radius: 22px; overflow: hidden; background: var(--bg-lift);
+  border: 1px solid var(--line); border-radius: 22px; background: var(--bg-lift);
 }
 .chapter__show video, .chapter__show img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: inherit; }
-/* pause and play (demos.js shows it; reduced motion keeps it hidden with the still): a 44px target around a small
-   dim chip in the clip's corner, so it stays out of the screen's way */
+/* pause and play (demos.js shows it; reduced motion keeps it hidden with the still): the whole clip is the button, so
+   tapping the screen pauses it, like a video app. Nothing is drawn while it plays; a play mark sits in the middle while
+   it is held, and the keyboard's focus ring outlines the clip with the current mark showing */
 .chapter__show { position: relative; }
 .chapter__pause {
-  position: absolute; right: var(--space-1); bottom: var(--space-1);
-  display: grid; place-items: center; width: 44px; height: 44px; padding: 0;
-  border: 0; border-radius: 50%; background: none; color: var(--ink); cursor: pointer;
+  position: absolute; inset: 0; z-index: 1;
+  display: grid; place-items: center; padding: 0;
+  border: 0; border-radius: inherit; background: none; color: var(--ink); cursor: pointer;
 }
-.chapter__pause::before {
-  content: ""; position: absolute; inset: 8px; border: 1px solid var(--line); border-radius: 50%;
-  background: var(--bg); opacity: 0.72; transition: opacity var(--t-fast);
+.chapter__pause:focus-visible { outline-offset: 2px; }
+.chapter__pause span {
+  position: relative; display: grid; place-items: center; width: 56px; height: 56px;
+  border: 1px solid var(--line); border-radius: 50%; background: var(--bg);
+  opacity: 0; transition: opacity var(--t-fast);
 }
-.chapter__pause:hover::before { opacity: 0.92; }
-.chapter__pause:focus-visible { outline-offset: -4px; border-radius: 50%; }
-/* the glyph: two bars while it plays, a triangle once held */
-.chapter__pause span { position: relative; width: 10px; height: 11px; border-inline: 3px solid currentColor; }
-.chapter__pause[aria-pressed="true"] span {
-  width: 10px; border: 0; background: currentColor; clip-path: polygon(10% 0, 100% 50%, 10% 100%);
+.chapter__pause[aria-pressed="true"] span, .chapter__pause:focus-visible span { opacity: 0.8; }
+/* the mark: two bars while it plays (seen only on keyboard focus), a triangle once held */
+.chapter__pause span::before { content: ""; width: 12px; height: 16px; border-inline: 4px solid currentColor; }
+.chapter__pause[aria-pressed="true"] span::before {
+  width: 14px; border: 0; margin-left: 4px; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 /* on a wide screen the clip sits in a thin phone outline */
 @media (min-width: 700px) {
   .chapter__show { padding: 9px; border-radius: 40px; }
   .chapter__show video, .chapter__show img { border-radius: 31px; }
-  .chapter__pause { right: var(--space-3); bottom: var(--space-3); }
 }
-@media (prefers-reduced-motion: reduce) { .chapter__pause::before { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .chapter__pause span { transition: none; } }
 
 .chapter__head { width: min(100%, 40rem); margin-top: var(--space-3); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
 .chapter__text { width: min(100%, 40rem); margin-top: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
@@ -284,9 +307,13 @@ html { scroll-behavior: smooth; }
   position: fixed; z-index: 5; right: var(--gutter); bottom: var(--space-3);
   display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
   border: 1px solid var(--line); border-radius: 50%; background: var(--bg-lift); color: var(--ink-dim);
-  transition: color var(--t-fast), border-color var(--t-fast);
+  transition: color var(--t-fast), border-color var(--t-fast), opacity var(--t-fast), visibility var(--t-fast);
 }
 .to-top:hover { color: var(--ember-soft); border-color: var(--ember); }
+/* on a phone it steps aside while the page scrolls, like the rail's pill (rail.js marks the scroll), unless a key
+   has focused it */
+@media (max-width: 1099px) { :root[data-scrolling] .to-top:not(:focus-visible) { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .to-top { transition: none; } }
 
 /* The lab: the notes index, each note (.labpage), and the not-found page that borrows their shell.
    Reading pages, so one narrow column of plain text: no field, no motifs. */

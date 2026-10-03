@@ -48,14 +48,36 @@
   --t-slow: 700ms;
   /* field: particle counts, sizes (px), and how faint the background dust is next to shape dots */
   --field-count: 5200;
-  --field-count-phone: 1800;
+  --field-count-phone: 1500;
   --dot: 2;
   --dot-lit: 3.2;
   --dot-phone: 2.2;
   --dot-lit-phone: 3;
   --dust: 0.45;
+  /* field motion. pace scales the shapes' clock (helix turn, fork, motif loops; 1 = the speed before 2026-10-03).
+     drift: px the dust wanders. dpr: canvas resolution cap, mouse vs touch screens (a 3x phone fills 4x the pixels
+     of 1.5x for dots too small to show the difference). */
+  --field-pace: 0.6;
+  --field-drift: 12;
+  --field-dpr: 2;
+  --field-dpr-touch: 1.5;
+  /* the wake a tap or click leaves: radius as a fraction of the screen's short side, push strength, lifetime.
+     A touch counts as a tap only if it moves under tap-slop px and lifts within tap-time; a swipe leaves nothing. */
+  --wake-size: 0.16;
+  --wake-push: 1.5;
+  --wake-life: 900ms;
+  --tap-slop: 10;
+  --tap-time: 300ms;
 }
 
 @media (min-width: 900px) {
   :root { --gutter: 48px; }
+}
+
+/* calm while scrolling (rail.js, demos.js): the phone's corner chrome steps aside while the page moves and comes back
+   this long after it stops; a clip starts only once this much of it is on screen and scrolling has been still this long */
+:root {
+  --t-chrome-back: 600ms;
+  --t-clip-settle: 280ms;
+  --clip-in-view: 0.6;
 }

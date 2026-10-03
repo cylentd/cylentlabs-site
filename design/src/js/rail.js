@@ -1,5 +1,7 @@
 /* The chapter rail: follows body[data-active] (set by chapters.js) to mark the chapter being read, names it on the
-   phone pill, and opens and closes the pill's list. */
+   phone pill, and opens and closes the pill's list. It also marks html[data-scrolling] while the page moves, until
+   --t-chrome-back after it stops, so the phone's corner chrome (this pill, the back-to-top button) can step aside the
+   way a phone browser's toolbar does. rail.css and chapters.css keep it shown while open or focused. */
 (() => {
   const rail = document.querySelector(".rail");
   if (!rail) return;
@@ -32,6 +34,15 @@
   // the footer's wordmark sits where the phone pill does: step aside while it is on screen
   const foot = document.querySelector(".foot");
   if (foot) new IntersectionObserver(([e]) => { rail.classList.toggle("is-off", e.isIntersecting); if (e.isIntersecting) close(); }).observe(foot);
+  // the page is moving: mark it, and unmark it once it has been still for --t-chrome-back
+  const root = document.documentElement;
+  const back = parseFloat(getComputedStyle(root).getPropertyValue("--t-chrome-back"));
+  let still = 0;
+  addEventListener("scroll", () => {
+    if (!("scrolling" in root.dataset)) root.dataset.scrolling = "";
+    clearTimeout(still);
+    still = setTimeout(() => delete root.dataset.scrolling, back);
+  }, { passive: true });
   new MutationObserver(mark).observe(document.body, { attributes: true, attributeFilter: ["data-active"] });
   mark();
 })();

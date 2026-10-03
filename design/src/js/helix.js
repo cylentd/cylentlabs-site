@@ -1,6 +1,6 @@
 /* Hero: a turning double helix in 3D, standing upright and tilted. It is yawed, pitched and rolled, then projected
    with perspective, so its near end is larger and brighter than its far end. One rung group per project glows in its
-   hue, and each project's name sits to the right of its group. Dragging across the stage spins it.
+   hue, and each project's name sits to the right of its group. Dragging across the stage with a mouse spins it.
    Every CYCLE seconds a replication fork runs its length; on the way to the first chapter it unzips, far end first. */
 window.LAB = window.LAB || {};
 (() => {
@@ -130,9 +130,10 @@ window.LAB = window.LAB || {};
     },
   };
 
-  // drag spins it; the spin eases back to the resting turn
+  // a mouse drag spins it; the spin eases back to the resting turn. Touch screens skip it: a swipe there scrolls.
   const stage = document.querySelector(".helix__stage");
   if (!stage || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
   let down = null;
   stage.addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY }; });
   addEventListener("pointermove", (e) => {

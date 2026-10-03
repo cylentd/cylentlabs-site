@@ -7,7 +7,11 @@
   transition: opacity var(--t-fast), visibility var(--t-fast);
 }
 body[data-active="hero"] .rail { opacity: 0; visibility: hidden; }
-@media (max-width: 1099px) { .rail.is-off { opacity: 0; visibility: hidden; } }
+@media (max-width: 1099px) {
+  .rail.is-off { opacity: 0; visibility: hidden; }
+  /* the pill steps aside while the page scrolls (rail.js), never while its list is open or a key has focused it */
+  :root[data-scrolling] .rail:not(:has([aria-expanded="true"], :focus-visible)) { opacity: 0; visibility: hidden; }
+}
 
 .rail__list { margin: 0; padding: 0; list-style: none; }
 .rail__list a {

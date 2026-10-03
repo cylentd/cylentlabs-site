@@ -1,8 +1,19 @@
 /* Field: one canvas and a few thousand particles. Particles spring toward the targets the active shape sets.
-   The pointer pushes them away on hover; a tap sends a shock ring through them. Background dust draws fainter. */
+   With a mouse, the pointer pushes them away on hover and tilts the field (parallax). A tap or click leaves a small
+   wake that drifts the way the finger or pointer moved and fades; a swipe that scrolls leaves nothing. Background
+   dust draws fainter. */
 window.LAB = window.LAB || {};
 (() => {
   const L = window.LAB;
+  // pure rules, kept apart from the canvas so tests can run them
+  L.fieldRules = {
+    // a touch is a tap when it barely moved and lifted quickly; anything else was a scroll or a drag
+    isTap: (dx, dy, ms, slop, maxMs) => dx * dx + dy * dy <= slop * slop && ms <= maxMs,
+    // the canvas's pixels per CSS pixel: never above the screen's own, capped lower on touch screens
+    dpr: (screen, fine, capFine, capTouch) => Math.max(1, Math.min(screen || 1, fine ? capFine : capTouch)),
+    // the wake's radius follows the screen, so a phone's wake is as small next to its screen as a desktop's
+    wakeRadius: (w, h, frac) => frac * Math.min(w, h),
+  };
   const cv = document.getElementById("field");
   if (!cv) return;
   const ctx = cv.getContext("2d");
@@ -13,6 +24,11 @@ window.LAB = window.LAB || {};
   const rgb = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
 
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // hover push, parallax and the idle half-rate draw are for a mouse; a touch screen gets only the tap wake
+  const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
+  const PACE = num("--field-pace"), DRIFT = num("--field-drift");
+  const WAKE = { size: num("--wake-size"), push: num("--wake-push"), life: num("--wake-life") / 1000 };
+  const TAP = { slop: num("--tap-slop"), ms: num("--tap-time") };
   // `small` picks the phone layout and is re-read on every resize; the dot count is fixed at load
   let small = innerWidth < 700;
   const N = Math.round(small ? num("--field-count-phone") : num("--field-count"));
@@ -33,10 +49,11 @@ window.LAB = window.LAB || {};
     wob[i] = Math.random() * 6.28;
   }
 
-  const view = { dpr: 1, mx: 0.5, my: 0.5, sx: 0.5, sy: 0.5, intro: 0, px: -999, py: -999, hover: false, so: 0 };
-  const shocks = []; // {x, y, age}: a ring that spreads from where the screen was tapped
+  const view = { dpr: 1, mx: 0.5, my: 0.5, sx: 0.5, sy: 0.5, intro: 0, px: -999, py: -999, hover: false, so: 0, wakeR: 0 };
+  const wakes = []; // {x, y, dx, dy, age}: a soft patch left where the screen was tapped, drifting along (dx, dy)
   // the active shape's stage box, in page coordinates
   let shape = null, stopId = "hero", geo = { sx: 0, sy: 0, sw: 0, sh: 0 }, t0 = performance.now(), last = t0;
+  const clock = (now) => ((now - t0) / 1000) * PACE; // the shapes' time: slower than the wall clock, so calmer
   const HANDOFF = 0.8; // seconds over which the old shape lets go, in the order its P.ord says
 
   // `so` (scroll offset) keeps the shape attached to its place on the page: screen y = y + so for shape dots.
@@ -49,7 +66,7 @@ window.LAB = window.LAB || {};
     shape = L.shapes[stopId] || L.shapes.hero;
     L.ctx = c;
     shape.init(P, c);
-    shape.step && shape.step(P, c, (performance.now() - t0) / 1000);
+    shape.step && shape.step(P, c, clock(performance.now()));
     for (let i = 0; i < N; i++) {
       y[i] = prev[i] - (P.amb[i] ? 0 : view.so);
       if (handoff && !reduce) hold[i] = ord[i] * HANDOFF; // a re-measure of the same stop keeps any wait in progress
@@ -80,9 +97,11 @@ window.LAB = window.LAB || {};
   // only the dust's spread changes, and scaling its targets gives exactly what a rebuild would.
   const SETTLE = 150, URLBAR = 0.2; // ms of quiet before a rebuild; fraction of the height
   let dot = 0, dotLit = 0, built = { w: 0, h: 0 }, settleTimer = 0;
+  const DPR_FINE = num("--field-dpr"), DPR_TOUCH = num("--field-dpr-touch");
   function fit() {
-    view.dpr = Math.min(devicePixelRatio || 1, 2);
+    view.dpr = L.fieldRules.dpr(devicePixelRatio, fine, DPR_FINE, DPR_TOUCH);
     P.w = innerWidth; P.h = innerHeight; small = P.w < 700;
+    view.wakeR = L.fieldRules.wakeRadius(P.w, P.h, WAKE.size);
     const cw = Math.round(P.w * view.dpr), ch = Math.round(P.h * view.dpr);
     if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
     // token reads are slow next to a frame's budget: read the dot sizes here, not in render()
@@ -147,7 +166,22 @@ window.LAB = window.LAB || {};
     ctx.globalAlpha = 1;
   }
 
-  // pointer forces: hover pushes nearby dots away; each shock ring kicks the dots it passes outward
+  // A wake is a soft Gaussian patch, not a ring: it drifts WAKE_TRAVEL radii along the tap's direction and fades.
+  // With a direction it carries dots along it and parts them a little; a still tap stirs them in a small eddy.
+  const WAKE_TRAVEL = 0.6;
+  function wakePush(i, sx, sy, f) {
+    const R = view.wakeR, r2 = R * R;
+    for (const w of wakes) {
+      const e = w.age / WAKE.life, cx = w.x + w.dx * WAKE_TRAVEL * R * e, cy = w.y + w.dy * WAKE_TRAVEL * R * e;
+      const rx = sx - cx, ry = sy - cy, d2 = rx * rx + ry * ry;
+      if (d2 > 2.25 * r2) continue;
+      const d = Math.sqrt(d2) || 1, k = Math.exp(-2 * d2 / r2) * (1 - e) * (1 - e) * WAKE.push * f;
+      const ux = rx / d, uy = ry / d;
+      if (w.dx || w.dy) { vx[i] += (w.dx * 0.7 + ux * 0.3) * k; vy[i] += (w.dy * 0.7 + uy * 0.3) * k; }
+      else { vx[i] += (ux * 0.5 - uy * 0.5) * k; vy[i] += (uy * 0.5 + ux * 0.5) * k; }
+    }
+  }
+  // pointer forces: hover pushes nearby dots away (mouse only); each wake nudges the dots it covers
   function push(i, f, hr) {
     const sy = y[i] + (P.amb[i] ? 0 : view.so); // where the dot is on screen
     if (view.hover) {
@@ -157,14 +191,7 @@ window.LAB = window.LAB || {};
         vx[i] += (dx / d) * k; vy[i] += (dy / d) * k;
       }
     }
-    for (const s of shocks) {
-      const dx = x[i] - s.x, dy = sy - s.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
-      const band = Math.abs(d - s.age * 420);
-      if (band < 55) {
-        const k = (1 - band / 55) * (1 - s.age / 0.9) * 2.4 * f;
-        vx[i] += (dx / d) * k; vy[i] += (dy / d) * k;
-      }
-    }
+    if (wakes.length) wakePush(i, x[i], sy, f);
   }
 
   // moves every dot one step; returns the fastest dot's speed, in px per 60th of a second
@@ -180,8 +207,8 @@ window.LAB = window.LAB || {};
         }
         continue;
       }
-      const ax = P.tx[i] + Math.sin(t * 0.4 + wob[i]) * (P.amb[i] ? 18 : 0.6); // shape dots barely breathe, so grids stay crisp
-      const ay = P.ty[i] + Math.cos(t * 0.33 + wob[i]) * (P.amb[i] ? 18 : 0.6);
+      const ax = P.tx[i] + Math.sin(t * 0.4 + wob[i]) * (P.amb[i] ? DRIFT : 0.6); // shape dots barely breathe, so grids stay crisp
+      const ay = P.ty[i] + Math.cos(t * 0.33 + wob[i]) * (P.amb[i] ? DRIFT : 0.6);
       const k = P.fast[i] ? 0.2 : stiff[i]; // the ball and the ping keep up with their targets
       vx[i] = (vx[i] + (ax - x[i]) * k * f) * damp;
       vy[i] = (vy[i] + (ay - y[i]) * k * f) * damp;
@@ -194,25 +221,25 @@ window.LAB = window.LAB || {};
   }
 
   // The field never stops while the page shows: the helix turns, every motif loops, the dust drifts, all by design.
-  // So it stops only while the page is hidden. When nothing on screen moves faster than CALM px per 60th of a
-  // second for CALM_FRAMES frames in a row (no hand-off, pointer, shock or scroll), it draws every other frame:
-  // each step is then under 2 px, too small to see as judder. Anything faster brings back every frame at once.
-  const CALM = 0.5, CALM_FRAMES = 30, CALM_MS = 30;
-  let loop = 0, calm = 0, drawnAt = 0;
+  // So it stops only while the page is hidden. With a mouse, when nothing on screen moves faster than CALM px per
+  // 60th of a second for CALM_FRAMES frames in a row (no hand-off, pointer, wake or scroll), it draws every other
+  // frame; anything faster brings back every frame at once. Touch screens draw every frame: on a phone the
+  // half-rate read as stutter (and at 120 Hz the old 30 ms gate dropped it to a quarter).
+  const CALM = 0.5, CALM_FRAMES = 30;
+  let loop = 0, calm = 0, skip = 0;
   function wake() { calm = 0; if (!loop && !reduce && !document.hidden) { last = performance.now(); loop = requestAnimationFrame(frame); } }
   function frame(now) {
     loop = requestAnimationFrame(frame);
-    if (calm >= CALM_FRAMES && now - drawnAt < CALM_MS) return;
-    drawnAt = now;
+    if (fine && calm >= CALM_FRAMES && (skip ^= 1)) return;
     const dt = Math.min(0.05, (now - last) / 1000), f = dt * 60; last = now;
-    const t = (now - t0) / 1000;
+    const t = clock(now);
     view.intro = Math.min(1, view.intro + dt / 0.7); // visible almost at once, so the flow-in reads
     const drift = Math.abs(view.mx - view.sx) + Math.abs(view.my - view.sy);
     view.sx += (view.mx - view.sx) * 0.06; view.sy += (view.my - view.sy) * 0.06;
-    for (let k = shocks.length - 1; k >= 0; k--) { shocks[k].age += dt; if (shocks[k].age > 0.9) shocks.splice(k, 1); }
+    for (let k = wakes.length - 1; k >= 0; k--) { wakes[k].age += dt; if (wakes[k].age > WAKE.life) wakes.splice(k, 1); }
     shape.step && shape.step(P, L.ctx, t);
     const fastest = simulate(dt, f, t) + drift * 0.06 * 14 * 1.6; // the parallax moves the deepest dots this much
-    calm = fastest < CALM && !shocks.length && view.intro === 1 ? calm + 1 : 0;
+    calm = fastest < CALM && !wakes.length && view.intro === 1 ? calm + 1 : 0;
     render();
   }
   addEventListener("visibilitychange", () => {
@@ -224,16 +251,36 @@ window.LAB = window.LAB || {};
     // a new stop hands off (the old shape lets go in order); the same stop re-measured just re-forms
     setStop(id, g, so) { const handoff = id !== stopId; stopId = id; if (g) geo = g; build(so, handoff); if (reduce) { snap(); render(); } },
     setOffset(v) { if (!reduce && v !== view.so) { view.so = v; wake(); } }, // scroll the shape with its stage
+    wakeCount: () => wakes.length, // for tests
   };
   addEventListener("resize", resize);
-  if (!reduce) {
+  if (!reduce) listen();
+  // Every listener is passive and none calls preventDefault, so the page always scrolls (touch-action stays pan-y).
+  function listen() {
+    const leave = (x0, y0, dx, dy) => {
+      const d = Math.hypot(dx, dy), dir = d > 2 ? 1 / d : 0;
+      wakes.push({ x: x0, y: y0, dx: dx * dir, dy: dy * dir, age: 0 });
+      wake();
+    };
+    let down = null; // the press a tap or click starts: where, when, and where it is now
+    addEventListener("pointerdown", (e) => { down = { x: e.clientX, y: e.clientY, at: e.timeStamp, nx: e.clientX, ny: e.clientY }; }, { passive: true });
+    addEventListener("pointercancel", () => { down = null; }, { passive: true }); // the browser took the touch to scroll
+    addEventListener("pointerup", (e) => {
+      if (!down) return;
+      const dx = e.clientX - down.x, dy = e.clientY - down.y;
+      // a click carries the way the mouse was heading; a tap, the way the finger slid, if it slid at all
+      if (fine && e.pointerType === "mouse") leave(e.clientX, e.clientY, view.vx || 0, view.vy || 0);
+      else if (L.fieldRules.isTap(dx, dy, e.timeStamp - down.at, TAP.slop, TAP.ms)) leave(e.clientX, e.clientY, dx, dy);
+      down = null;
+    }, { passive: true });
+    if (!fine) return;
     addEventListener("pointermove", (e) => {
+      if (e.pointerType !== "mouse") return;
+      view.vx = e.clientX - view.px; view.vy = e.clientY - view.py; // the last step's direction, for a click's wake
       view.mx = e.clientX / P.w; view.my = e.clientY / P.h; view.px = e.clientX; view.py = e.clientY; view.hover = true;
       wake();
     }, { passive: true });
-    addEventListener("pointerdown", (e) => { shocks.push({ x: e.clientX, y: e.clientY, age: 0 }); wake(); }, { passive: true });
     document.documentElement.addEventListener("pointerleave", () => { view.hover = false; });
-    addEventListener("pointerup", (e) => { if (e.pointerType === "touch") view.hover = false; }, { passive: true });
   }
 
   fit(); build();
