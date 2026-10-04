@@ -9,6 +9,8 @@
   --ember-soft: #ffb27a;
   --signal: #6fa8d8;
   --line: rgba(243, 237, 228, 0.14);
+  /* how much of the glow behind a chapter's words is solid night before it fades out over the dust */
+  --scrim-solid: 60%;
 
   /* one hue per project: its rungs on the helix, its motif, its name. Order matches shapes.js L.HUES */
   --hue-jarvis: #ff7a3d;

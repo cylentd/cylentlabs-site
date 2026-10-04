@@ -1,6 +1,6 @@
 # Cylent Labs site: agent notes
 
-Portfolio at cylentlabs.com. One static page: a particle DNA helix in the hero, then one chapter per project (ff-jarvis, Team Watch, Restock Watch, seat-scout, Team Lock), each with a small particle motif, the project's phone clips, and its links. The particles hand off from the helix to each chapter's motif as you scroll.
+Portfolio at cylentlabs.com. One static page: a particle DNA helix in the hero, then one chapter per project (ff-jarvis, Team Watch, Restock Watch, Seat Scout, Team Lock), each with a small particle motif, the project's phone clips, and its links. The particles hand off from the helix to each chapter's motif as you scroll.
 
 ## Commands
 

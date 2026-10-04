@@ -38,6 +38,8 @@
   --ember-soft: #ffb27a;
   --signal: #6fa8d8;
   --line: rgba(243, 237, 228, 0.14);
+  /* how much of the glow behind a chapter's words is solid night before it fades out over the dust */
+  --scrim-solid: 60%;
 
   /* one hue per project: its rungs on the helix, its motif, its name. Order matches shapes.js L.HUES */
   --hue-jarvis: #ff7a3d;
@@ -241,6 +243,7 @@ body:not([data-active="hero"]) .helix.is-placed .helix__names a { pointer-events
 .chapter {
   display: flex; flex-direction: column; align-items: center; text-align: center;
   padding: var(--space-5) var(--gutter) var(--space-6);
+  overflow-x: clip; /* the glow behind the words reaches past a phone's edge; never let it scroll the page sideways */
 }
 .chapter__motif { position: relative; width: min(64vw, var(--motif-w)); aspect-ratio: 18 / 7; }
 .chapter__motif span {
@@ -291,6 +294,13 @@ body:not([data-active="hero"]) .helix.is-placed .helix__names a { pointer-events
 }
 @media (prefers-reduced-motion: reduce) { .chapter__pause span { transition: none; } }
 
+/* every block of words sits on a soft night-coloured glow that fades to nothing at its edges, so the dust thins out
+   behind the text without drawing a panel. main is its own stacking context above the field, so -1 stays over the dust */
+.chapter__head, .chapter__text, .chapter__built { position: relative; }
+.chapter__head::before, .chapter__text::before, .chapter__built::before {
+  content: ""; position: absolute; inset: calc(-1 * var(--space-4)); z-index: -1; pointer-events: none;
+  background: radial-gradient(closest-side, var(--bg) var(--scrim-solid), transparent);
+}
 .chapter__head { width: min(100%, 40rem); margin-top: var(--space-3); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
 .chapter__text { width: min(100%, 40rem); margin-top: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
 .chapter h2 { margin: 0; font: 400 var(--step-3) / 1 var(--font-display); }
@@ -302,13 +312,19 @@ body:not([data-active="hero"]) .helix.is-placed .helix__names a { pointer-events
 .chapter__links { position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--space-1); }
 .chapter__status { padding: 10px var(--space-2); font-size: var(--step--1); color: var(--hue); }
 .chapter__how[aria-expanded="true"] { border-color: var(--hue); color: var(--hue); }
-/* opens in the page's flow under the buttons: plain text in the column, no panel, nothing covered */
-.chapter__built { width: min(100%, 34rem); text-align: left; animation: built-in var(--t-slow) var(--ease-out); }
+/* opens in the page's flow under the buttons: plain text in the column, no panel, nothing covered. The block sits
+   centred in the column: the tags centred in the project's hue, the bullets left-aligned under them */
+.chapter__built { width: fit-content; max-width: min(100%, 34rem); text-align: left; animation: built-in var(--t-slow) var(--ease-out); }
 .chapter__built[hidden] { display: none; }
-.chapter__stack { margin: 0 0 var(--space-2); color: var(--ink); }
-.chapter__built ul { margin: 0; padding-left: 1.1em; font-size: var(--step--1); color: var(--ink-dim); }
-.chapter__built li + li { margin-top: var(--space-1); }
-.chapter__built li::marker { color: var(--hue); }
+.chapter__built ul { margin: 0; padding: 0; list-style: none; }
+.chapter__built .chapter__stack { margin-bottom: var(--space-3); display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-1); }
+.chapter__stack li {
+  padding: 2px var(--space-1); border: 1px solid color-mix(in srgb, var(--hue) 45%, transparent); border-radius: 999px;
+  font-size: var(--step--1); color: var(--hue);
+}
+.chapter__built .chapter__points { padding-left: 1.1em; list-style: disc; color: var(--ink-dim); }
+.chapter__points li + li { margin-top: var(--space-1); }
+.chapter__points li::marker { color: var(--hue); }
 @keyframes built-in { from { opacity: 0; transform: translateY(-6px); } }
 @media (prefers-reduced-motion: reduce) { .chapter__built { animation: none; } }
 

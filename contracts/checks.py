@@ -51,6 +51,9 @@ def check_projects(data):
             need({"text", "at", "lit"} <= set(lb) and 0 <= lb["at"] <= 100, f"projects.json: {pid}.motif_labels need text, at 0-100, lit")
         bt = p.get("built")
         need(bt is None or {"stack", "points"} <= set(bt), f"projects.json: {pid}.built needs stack and points")
+        if bt:
+            need(isinstance(bt["stack"], list) and all(isinstance(s, str) for s in bt["stack"]), f"projects.json: {pid}.built.stack is a list of tags")
+            need(all(isinstance(x, str) for x in bt["points"]), f"projects.json: {pid}.built.points are plain sentences")
 
 
 SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")

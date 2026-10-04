@@ -136,10 +136,11 @@ def built(p):
     b = p.get("built")
     if not b:
         return ""
+    tags = "".join(f"<li>{esc(s)}</li>" for s in b["stack"])
     pts = "".join(f"<li>{esc(x)}</li>" for x in b["points"])
     return (
         f'<div class="chapter__built" id="built-{esc(p["id"])}" hidden>'
-        f'<p class="chapter__stack">{esc(b["stack"])}</p><ul>{pts}</ul></div>'
+        f'<ul class="chapter__stack">{tags}</ul><ul class="chapter__points">{pts}</ul></div>'
     )
 
 

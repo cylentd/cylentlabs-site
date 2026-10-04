@@ -11,28 +11,29 @@
     {
       "id": "jarvis",
       "name": "ff-jarvis",
-      "hook": "A fantasy football model and its nightly data pipeline. It prices every pick on a draft board in August, then feeds Team Watch all season.",
+      "hook": "A fantasy football model that tests popular draft narratives against 15 seasons of data and keeps only the ones that win. Powers the Draft War Room and Team Watch.",
       "draft": false,
       "headline": { "value": "+24 to +55", "label": "points a season over drafting by ADP, in simulated drafts 2011 to 2025; ahead in 12 of 15 seasons" },
       "clips": [
         { "src": "assets/demos/jarvis-phone.mp4", "poster": "assets/previews/jarvis-phone.webp", "alt": "The draft board on a phone: a pick lands and the board re-ranks." }
       ],
       "built": {
-        "stack": "Python and pandas for the model and pipeline. React, Vite and Tailwind for the draft board, on Vercel.",
+        "stack": ["Python", "pandas", "React", "Vite", "Tailwind", "Vercel"],
         "points": [
-          "A change to the model only ships if it beats plain ADP out of sample: at least 40 samples, a bootstrap interval that excludes zero, and |t| of 2.4 or more. Anything that fails drops to zero weight.",
-          "Simulated 12-team drafts, 2011 to 2025: playoff odds 59.8% to 63.2% and title odds 14.2% to 15.2% against drafting by ADP (2026-09-08 run).",
-          "In season it projects every player each week from ESPN, Yahoo, Sleeper, nflverse, props and weather data.",
-          "Each refresh step runs on its own, so one API failure is logged and skipped. 1,272 tests."
+          "Data from ESPN, Yahoo, Sleeper, nflverse, betting props and weather, pulled nightly.",
+          "Backtested in simulated 12-team drafts on the 2011 to 2025 seasons.",
+          "A Python pipeline turns 15 seasons of draft and stat data into one JSON file the React board loads.",
+          "The pick engine is pure JavaScript, so the board re-ranks in the browser after every pick, no server.",
+          "The same engine can draft for you, running 30 full drafts from your seat in a few seconds, every strategy on the same random draws."
         ]
       },
-      "use": [{ "label": "Draft board", "href": "https://draft-war-room-livid.vercel.app" }],
+      "use": [{ "label": "Draft War Room", "href": "https://draft-war-room-livid.vercel.app" }],
       "how": null
     },
     {
       "id": "teamwatch",
       "name": "Team Watch",
-      "hook": "Your league's weekly paper, running on ff-jarvis: start/sit calls, a profile for every player, and your roster as a pack of cards to rip open each week.",
+      "hook": "Your fantasy stats, start/sit calls and player breakdowns in one place, powered by ff-jarvis.",
       "draft": false,
       "headline": null,
       "clips": [
@@ -40,11 +41,14 @@
         { "src": "assets/demos/teamwatch-pack-phone.mp4", "poster": "assets/previews/teamwatch-pack-phone.webp", "alt": "Team Watch on a phone: the week's roster pack tears open and the cards come out, worst first, best last." }
       ],
       "built": {
-        "stack": "A Python build step makes one inlined HTML page from ff-jarvis's data, rebuilt three times a day, on Vercel.",
+        "stack": ["Claude", "Python", "Vanilla JS", "Canvas 2D", "CSS", "Vercel"],
         "points": [
-          "Start/sit calls are graded every week, in public, against FantasyPros and Pitcher List.",
-          "The stat sphere is the player's season ranks drawn as a crystal; a tap unfolds it into a flat radar.",
-          "Tests are mapped to the views they touch. A CSS change runs about 14 seconds of tests instead of the full 65."
+          "Claude writes the words and Python checks them. A number that isn't in the data sends the reply back once, then it's replaced with plain facts.",
+          "For game previews, Claude predicts each game before it sees the betting line, and every pick is graded against the final score.",
+          "For highlights, Claude picks from a shortlist Python builds, and each line is checked against that player's numbers.",
+          "For the league roast, one Claude pass drafts and a second ranks, and the best draft that passes the checks ships.",
+          "The pack tear follows your finger, with drag progress driving the CSS variables that peel the foil.",
+          "The stat crystal is hand-rolled 3D on a 2D canvas, and a tap tilts it flat into a radar chart."
         ]
       },
       "use": [{ "href": "https://teamwatch.cylentlabs.com" }],
@@ -53,16 +57,17 @@
     {
       "id": "tcg",
       "name": "Restock Watch",
-      "hook": "Watches big-box retailers for sealed Pokémon, One Piece and Riftbound product, and pings the moment it is back. Next: checking out before the bots do.",
+      "hook": "Pings Discord when sealed Pokémon, One Piece or Riftbound product restocks at 7 big retailers, and flags whether the price is fair or a scalper's markup.",
       "draft": false,
       "headline": null,
       "clips": [{ "src": "assets/demos/tcg-phone.mp4", "poster": "assets/previews/tcg-phone.webp", "alt": "Restock Watch on a phone: the status page and its price tiles." }],
       "built": {
-        "stack": "Python with threaded pollers, browser automation, Discord alerts, and a Vercel status page.",
+        "stack": ["Python", "Browser automation", "Discord", "Vercel"],
         "points": [
-          "121 retailer listings across 7 retailers, priced against 91 TCGplayer products (as of 2026-10-03).",
-          "Two polling lanes: slow browser-driven retailers no longer hold up fast plain-HTTP ones. GameStop's effective poll fell from about 700 seconds to about 180.",
-          "The browser and its daemon are recycled when memory passes set limits, after leaks that grew to several gigabytes."
+          "Each retailer gets its own method, from Best Buy's official API to Walmart's embedded page data to Target read inside a real Chrome.",
+          "Prices each restock against retail, with TCGplayer for market value.",
+          "Within 10% of retail is an urgent Discord ping; above that, a quiet one.",
+          "A hot score ranks products by market premium, product type, Reddit buzz and stock state."
         ]
       },
       "use": [{ "href": "https://tcgwatch.cylentlabs.com" }],
@@ -70,17 +75,18 @@
     },
     {
       "id": "seat",
-      "name": "seat-scout",
-      "hook": "Found the best seats still open for IMAX 70mm showings at 7 California theaters.",
+      "name": "Seat Scout",
+      "hook": "Finds the best seats still open for selected showings in California.",
       "draft": false,
       "headline": null,
-      "clips": [{ "src": "assets/demos/seat-phone.mp4", "poster": "assets/previews/seat-phone.webp", "alt": "seat-scout on a phone during its September 2026 run: open-seat counts per theater, then a theater's best bets as Admit One ticket stubs." }],
+      "clips": [{ "src": "assets/demos/seat-phone.mp4", "poster": "assets/previews/seat-phone.webp", "alt": "Seat Scout on a phone during its September 2026 run: open-seat counts per theater, then a theater's best bets as Admit One ticket stubs." }],
       "built": {
-        "stack": "Node.js scanner on a schedule, a static Vercel page, and a Discord bot for on-demand checks.",
+        "stack": ["Node.js", "Chrome DevTools Protocol", "Discord", "Vercel"],
         "points": [
-          "Its September run scanned 547 showtimes; 257 still had good centre pairs. 11 run-extended alerts fired between July 20 and August 3.",
-          "The public page shows counts of good adjacent seats only, never the seat grids.",
-          "Near-term showings are re-fetched every scan. Later dates are cached for 24 to 72 hours."
+          "Reads seat maps from inside a real Chrome session over the DevTools protocol.",
+          "Seats are tiered Center, Mid-back or Edge by depth and side; the front 30% of rows never count.",
+          "A run of n open seats together yields floor(n/2) pairs, each rated by its worse seat.",
+          "The public page shows counts only, sorted by distance from you. A Discord bot scans when @mentioned."
         ]
       },
       "use": [{ "href": "https://seat-scout-tan.vercel.app" }],
@@ -89,7 +95,7 @@
     {
       "id": "lock",
       "name": "Team Lock",
-      "hook": "A fantasy football auto-battler. Build a roster, call plays against reads you can't see, and watch it play out.",
+      "hook": "A fantasy football auto-battler. Build a roster, call plays, and lead your team to the championship.",
       "draft": false,
       "headline": null,
       "clips": [
@@ -97,10 +103,13 @@
         { "src": "assets/demos/lock-locked-phone.mp4", "poster": "assets/previews/lock-locked-phone.webp", "alt": "Team Lock storyboard: the whole lineup lights up and links, then LOCKED IN over the roll call." }
       ],
       "built": {
-        "stack": "A Python paper-game simulator, a PixiJS v8 animation engine, and a ComfyUI art pipeline.",
+        "stack": ["Python", "PixiJS", "WebGL", "ComfyUI"],
         "points": [
-          "Every rule is a flagged switch and a seeded play replays identically, so a balance change can be tested, not argued.",
-          "Character animation runs on damped springs and a keyframe timeline."
+          "A Python simulator plays out each down from seeded rules that switch on and off.",
+          "The animation runs on a Spine-style 2D rigging engine built from scratch, where each drawing is cut into parts and each part is a PixiJS mesh bent every frame.",
+          "Springs give soft parts follow-through, and two-bone IK keeps planted feet on the ground.",
+          "Motion is layered pulses with smoothstep easing, not keyframes.",
+          "Character art comes from a ComfyUI pipeline."
         ]
       },
       "use": [],

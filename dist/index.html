@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>cylent labs</title>
-<meta name="description" content="Tools that watch fantasy football, trading card restocks and IMAX seats, by David Luu. ff-jarvis, Restock Watch, seat-scout, Team Watch, Team Lock.">
+<meta name="description" content="Tools that watch fantasy football, trading card restocks and movie seats, by David Luu. ff-jarvis, Restock Watch, Seat Scout, Team Watch, Team Lock.">
 <link rel="canonical" href="https://www.cylentlabs.com/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="cylent labs">
 <meta property="og:title" content="cylent labs">
-<meta property="og:description" content="Tools that watch fantasy football, trading card restocks and IMAX seats, by David Luu. ff-jarvis, Restock Watch, seat-scout, Team Watch, Team Lock.">
+<meta property="og:description" content="Tools that watch fantasy football, trading card restocks and movie seats, by David Luu. ff-jarvis, Restock Watch, Seat Scout, Team Watch, Team Lock.">
 <meta property="og:url" content="https://www.cylentlabs.com/">
 <meta property="og:image" content="https://www.cylentlabs.com/assets/og.jpg">
 <meta property="og:image:width" content="1200">
@@ -49,6 +49,8 @@
   --ember-soft: #ffb27a;
   --signal: #6fa8d8;
   --line: rgba(243, 237, 228, 0.14);
+  /* how much of the glow behind a chapter's words is solid night before it fades out over the dust */
+  --scrim-solid: 60%;
 
   /* one hue per project: its rungs on the helix, its motif, its name. Order matches shapes.js L.HUES */
   --hue-jarvis: #ff7a3d;
@@ -252,6 +254,7 @@ body:not([data-active="hero"]) .helix.is-placed .helix__names a { pointer-events
 .chapter {
   display: flex; flex-direction: column; align-items: center; text-align: center;
   padding: var(--space-5) var(--gutter) var(--space-6);
+  overflow-x: clip; /* the glow behind the words reaches past a phone's edge; never let it scroll the page sideways */
 }
 .chapter__motif { position: relative; width: min(64vw, var(--motif-w)); aspect-ratio: 18 / 7; }
 .chapter__motif span {
@@ -302,6 +305,13 @@ body:not([data-active="hero"]) .helix.is-placed .helix__names a { pointer-events
 }
 @media (prefers-reduced-motion: reduce) { .chapter__pause span { transition: none; } }
 
+/* every block of words sits on a soft night-coloured glow that fades to nothing at its edges, so the dust thins out
+   behind the text without drawing a panel. main is its own stacking context above the field, so -1 stays over the dust */
+.chapter__head, .chapter__text, .chapter__built { position: relative; }
+.chapter__head::before, .chapter__text::before, .chapter__built::before {
+  content: ""; position: absolute; inset: calc(-1 * var(--space-4)); z-index: -1; pointer-events: none;
+  background: radial-gradient(closest-side, var(--bg) var(--scrim-solid), transparent);
+}
 .chapter__head { width: min(100%, 40rem); margin-top: var(--space-3); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
 .chapter__text { width: min(100%, 40rem); margin-top: var(--space-4); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
 .chapter h2 { margin: 0; font: 400 var(--step-3) / 1 var(--font-display); }
@@ -313,13 +323,19 @@ body:not([data-active="hero"]) .helix.is-placed .helix__names a { pointer-events
 .chapter__links { position: relative; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--space-1); }
 .chapter__status { padding: 10px var(--space-2); font-size: var(--step--1); color: var(--hue); }
 .chapter__how[aria-expanded="true"] { border-color: var(--hue); color: var(--hue); }
-/* opens in the page's flow under the buttons: plain text in the column, no panel, nothing covered */
-.chapter__built { width: min(100%, 34rem); text-align: left; animation: built-in var(--t-slow) var(--ease-out); }
+/* opens in the page's flow under the buttons: plain text in the column, no panel, nothing covered. The block sits
+   centred in the column: the tags centred in the project's hue, the bullets left-aligned under them */
+.chapter__built { width: fit-content; max-width: min(100%, 34rem); text-align: left; animation: built-in var(--t-slow) var(--ease-out); }
 .chapter__built[hidden] { display: none; }
-.chapter__stack { margin: 0 0 var(--space-2); color: var(--ink); }
-.chapter__built ul { margin: 0; padding-left: 1.1em; font-size: var(--step--1); color: var(--ink-dim); }
-.chapter__built li + li { margin-top: var(--space-1); }
-.chapter__built li::marker { color: var(--hue); }
+.chapter__built ul { margin: 0; padding: 0; list-style: none; }
+.chapter__built .chapter__stack { margin-bottom: var(--space-3); display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-1); }
+.chapter__stack li {
+  padding: 2px var(--space-1); border: 1px solid color-mix(in srgb, var(--hue) 45%, transparent); border-radius: 999px;
+  font-size: var(--step--1); color: var(--hue);
+}
+.chapter__built .chapter__points { padding-left: 1.1em; list-style: disc; color: var(--ink-dim); }
+.chapter__points li + li { margin-top: var(--space-1); }
+.chapter__points li::marker { color: var(--hue); }
 @keyframes built-in { from { opacity: 0; transform: translateY(-6px); } }
 @media (prefers-reduced-motion: reduce) { .chapter__built { animation: none; } }
 
@@ -478,75 +494,75 @@ body[data-active="hero"] .rail { opacity: 0; visibility: hidden; }
   <p class="hero__quote">welcome to my lab. let&#x27;s cook.</p>
   <div class="helix js-wait">
     <div class="helix__stage" aria-hidden="true"></div>
-    <nav class="helix__names" style="--n: 5" aria-label="Projects"><a href="#jarvis" style="--hue: var(--hue-jarvis)">ff-jarvis</a><a href="#teamwatch" style="--hue: var(--hue-teamwatch)">Team Watch</a><a href="#tcg" style="--hue: var(--hue-tcg)">Restock Watch</a><a href="#seat" style="--hue: var(--hue-seat)">seat-scout</a><a href="#lock" style="--hue: var(--hue-lock)">Team Lock</a></nav>
+    <nav class="helix__names" style="--n: 5" aria-label="Projects"><a href="#jarvis" style="--hue: var(--hue-jarvis)">ff-jarvis</a><a href="#teamwatch" style="--hue: var(--hue-teamwatch)">Team Watch</a><a href="#tcg" style="--hue: var(--hue-tcg)">Restock Watch</a><a href="#seat" style="--hue: var(--hue-seat)">Seat Scout</a><a href="#lock" style="--hue: var(--hue-lock)">Team Lock</a></nav>
   </div>
 </header>
-<nav class="rail" aria-label="Projects"><button type="button" class="rail__pill" aria-expanded="false" aria-controls="rail-list"><span class="rail__dot" aria-hidden="true"></span><span class="rail__now">Projects</span></button><ol class="rail__list" id="rail-list"><li><a href="#jarvis" data-for="jarvis" style="--hue: var(--hue-jarvis)">ff-jarvis</a></li><li><a href="#teamwatch" data-for="teamwatch" style="--hue: var(--hue-teamwatch)">Team Watch</a></li><li><a href="#tcg" data-for="tcg" style="--hue: var(--hue-tcg)">Restock Watch</a></li><li><a href="#seat" data-for="seat" style="--hue: var(--hue-seat)">seat-scout</a></li><li><a href="#lock" data-for="lock" style="--hue: var(--hue-lock)">Team Lock</a></li></ol></nav>
+<nav class="rail" aria-label="Projects"><button type="button" class="rail__pill" aria-expanded="false" aria-controls="rail-list"><span class="rail__dot" aria-hidden="true"></span><span class="rail__now">Projects</span></button><ol class="rail__list" id="rail-list"><li><a href="#jarvis" data-for="jarvis" style="--hue: var(--hue-jarvis)">ff-jarvis</a></li><li><a href="#teamwatch" data-for="teamwatch" style="--hue: var(--hue-teamwatch)">Team Watch</a></li><li><a href="#tcg" data-for="tcg" style="--hue: var(--hue-tcg)">Restock Watch</a></li><li><a href="#seat" data-for="seat" style="--hue: var(--hue-seat)">Seat Scout</a></li><li><a href="#lock" data-for="lock" style="--hue: var(--hue-lock)">Team Lock</a></li></ol></nav>
 <main>
   <div id="projects">
   <section class="chapter" id="jarvis" data-stop="jarvis" style="--hue: var(--hue-jarvis)">
     <div class="chapter__motif" aria-hidden="true"></div>
     <div class="chapter__head">
       <h2>ff-jarvis</h2>
-      <p class="chapter__hook">A fantasy football model and its nightly data pipeline. It prices every pick on a draft board in August, then feeds Team Watch all season.</p>
+      <p class="chapter__hook">A fantasy football model that tests popular draft narratives against 15 seasons of data and keeps only the ones that win. Powers the Draft War Room and Team Watch.</p>
     </div>
     <div class="chapter__shows" data-count="1"><figure class="chapter__show"><video class="chapter__demo" src="assets/demos/jarvis-phone.mp4" poster="assets/previews/jarvis-phone.webp" width="390" height="844" muted loop playsinline preload="none" aria-label="The draft board on a phone: a pick lands and the board re-ranks."></video><button type="button" class="chapter__pause" aria-pressed="false" aria-label="Pause clip" hidden><span aria-hidden="true"></span></button></figure></div>
     <div class="chapter__text">
       <p class="chapter__num"><strong>+24 to +55</strong><span>points a season over drafting by ADP, in simulated drafts 2011 to 2025; ahead in 12 of 15 seasons</span></p>
-      <div class="chapter__links"><a class="btn btn--use" href="https://draft-war-room-livid.vercel.app">Draft board</a><button type="button" class="btn chapter__how" aria-expanded="false" aria-controls="built-jarvis">How it&#x27;s built</button></div>
-      <div class="chapter__built" id="built-jarvis" hidden><p class="chapter__stack">Python and pandas for the model and pipeline. React, Vite and Tailwind for the draft board, on Vercel.</p><ul><li>A change to the model only ships if it beats plain ADP out of sample: at least 40 samples, a bootstrap interval that excludes zero, and |t| of 2.4 or more. Anything that fails drops to zero weight.</li><li>Simulated 12-team drafts, 2011 to 2025: playoff odds 59.8% to 63.2% and title odds 14.2% to 15.2% against drafting by ADP (2026-09-08 run).</li><li>In season it projects every player each week from ESPN, Yahoo, Sleeper, nflverse, props and weather data.</li><li>Each refresh step runs on its own, so one API failure is logged and skipped. 1,272 tests.</li></ul></div>
+      <div class="chapter__links"><a class="btn btn--use" href="https://draft-war-room-livid.vercel.app">Draft War Room</a><button type="button" class="btn chapter__how" aria-expanded="false" aria-controls="built-jarvis">How it&#x27;s built</button></div>
+      <div class="chapter__built" id="built-jarvis" hidden><ul class="chapter__stack"><li>Python</li><li>pandas</li><li>React</li><li>Vite</li><li>Tailwind</li><li>Vercel</li></ul><ul class="chapter__points"><li>Data from ESPN, Yahoo, Sleeper, nflverse, betting props and weather, pulled nightly.</li><li>Backtested in simulated 12-team drafts on the 2011 to 2025 seasons.</li><li>A Python pipeline turns 15 seasons of draft and stat data into one JSON file the React board loads.</li><li>The pick engine is pure JavaScript, so the board re-ranks in the browser after every pick, no server.</li><li>The same engine can draft for you, running 30 full drafts from your seat in a few seconds, every strategy on the same random draws.</li></ul></div>
     </div>
   </section>
   <section class="chapter" id="teamwatch" data-stop="teamwatch" style="--hue: var(--hue-teamwatch)">
     <div class="chapter__motif" aria-hidden="true"></div>
     <div class="chapter__head">
       <h2>Team Watch</h2>
-      <p class="chapter__hook">Your league&#x27;s weekly paper, running on ff-jarvis: start/sit calls, a profile for every player, and your roster as a pack of cards to rip open each week.</p>
+      <p class="chapter__hook">Your fantasy stats, start/sit calls and player breakdowns in one place, powered by ff-jarvis.</p>
     </div>
     <div class="chapter__shows" data-count="2"><figure class="chapter__show"><video class="chapter__demo" src="assets/demos/teamwatch-phone.mp4" poster="assets/previews/teamwatch-phone.webp" width="390" height="844" muted loop playsinline preload="none" aria-label="Team Watch on a phone: Jahmyr Gibbs&#x27;s profile, where tapping his stat sphere opens it into a radar of his RB ranks."></video><button type="button" class="chapter__pause" aria-pressed="false" aria-label="Pause clip" hidden><span aria-hidden="true"></span></button></figure><figure class="chapter__show"><video class="chapter__demo" src="assets/demos/teamwatch-pack-phone.mp4" poster="assets/previews/teamwatch-pack-phone.webp" width="390" height="844" muted loop playsinline preload="none" aria-label="Team Watch on a phone: the week&#x27;s roster pack tears open and the cards come out, worst first, best last."></video><button type="button" class="chapter__pause" aria-pressed="false" aria-label="Pause clip" hidden><span aria-hidden="true"></span></button></figure></div>
     <div class="chapter__text">
       
       <div class="chapter__links"><a class="btn btn--use" href="https://teamwatch.cylentlabs.com">Use it</a><button type="button" class="btn chapter__how" aria-expanded="false" aria-controls="built-teamwatch">How it&#x27;s built</button></div>
-      <div class="chapter__built" id="built-teamwatch" hidden><p class="chapter__stack">A Python build step makes one inlined HTML page from ff-jarvis&#x27;s data, rebuilt three times a day, on Vercel.</p><ul><li>Start/sit calls are graded every week, in public, against FantasyPros and Pitcher List.</li><li>The stat sphere is the player&#x27;s season ranks drawn as a crystal; a tap unfolds it into a flat radar.</li><li>Tests are mapped to the views they touch. A CSS change runs about 14 seconds of tests instead of the full 65.</li></ul></div>
+      <div class="chapter__built" id="built-teamwatch" hidden><ul class="chapter__stack"><li>Claude</li><li>Python</li><li>Vanilla JS</li><li>Canvas 2D</li><li>CSS</li><li>Vercel</li></ul><ul class="chapter__points"><li>Claude writes the words and Python checks them. A number that isn&#x27;t in the data sends the reply back once, then it&#x27;s replaced with plain facts.</li><li>For game previews, Claude predicts each game before it sees the betting line, and every pick is graded against the final score.</li><li>For highlights, Claude picks from a shortlist Python builds, and each line is checked against that player&#x27;s numbers.</li><li>For the league roast, one Claude pass drafts and a second ranks, and the best draft that passes the checks ships.</li><li>The pack tear follows your finger, with drag progress driving the CSS variables that peel the foil.</li><li>The stat crystal is hand-rolled 3D on a 2D canvas, and a tap tilts it flat into a radar chart.</li></ul></div>
     </div>
   </section>
   <section class="chapter" id="tcg" data-stop="tcg" style="--hue: var(--hue-tcg)">
     <div class="chapter__motif" aria-hidden="true"></div>
     <div class="chapter__head">
       <h2>Restock Watch</h2>
-      <p class="chapter__hook">Watches big-box retailers for sealed Pokémon, One Piece and Riftbound product, and pings the moment it is back. Next: checking out before the bots do.</p>
+      <p class="chapter__hook">Pings Discord when sealed Pokémon, One Piece or Riftbound product restocks at 7 big retailers, and flags whether the price is fair or a scalper&#x27;s markup.</p>
     </div>
     <div class="chapter__shows" data-count="1"><figure class="chapter__show"><video class="chapter__demo" src="assets/demos/tcg-phone.mp4" poster="assets/previews/tcg-phone.webp" width="390" height="844" muted loop playsinline preload="none" aria-label="Restock Watch on a phone: the status page and its price tiles."></video><button type="button" class="chapter__pause" aria-pressed="false" aria-label="Pause clip" hidden><span aria-hidden="true"></span></button></figure></div>
     <div class="chapter__text">
       
       <div class="chapter__links"><a class="btn btn--use" href="https://tcgwatch.cylentlabs.com">Use it</a><button type="button" class="btn chapter__how" aria-expanded="false" aria-controls="built-tcg">How it&#x27;s built</button></div>
-      <div class="chapter__built" id="built-tcg" hidden><p class="chapter__stack">Python with threaded pollers, browser automation, Discord alerts, and a Vercel status page.</p><ul><li>121 retailer listings across 7 retailers, priced against 91 TCGplayer products (as of 2026-10-03).</li><li>Two polling lanes: slow browser-driven retailers no longer hold up fast plain-HTTP ones. GameStop&#x27;s effective poll fell from about 700 seconds to about 180.</li><li>The browser and its daemon are recycled when memory passes set limits, after leaks that grew to several gigabytes.</li></ul></div>
+      <div class="chapter__built" id="built-tcg" hidden><ul class="chapter__stack"><li>Python</li><li>Browser automation</li><li>Discord</li><li>Vercel</li></ul><ul class="chapter__points"><li>Each retailer gets its own method, from Best Buy&#x27;s official API to Walmart&#x27;s embedded page data to Target read inside a real Chrome.</li><li>Prices each restock against retail, with TCGplayer for market value.</li><li>Within 10% of retail is an urgent Discord ping; above that, a quiet one.</li><li>A hot score ranks products by market premium, product type, Reddit buzz and stock state.</li></ul></div>
     </div>
   </section>
   <section class="chapter" id="seat" data-stop="seat" style="--hue: var(--hue-seat)">
     <div class="chapter__motif" aria-hidden="true"></div>
     <div class="chapter__head">
-      <h2>seat-scout</h2>
-      <p class="chapter__hook">Found the best seats still open for IMAX 70mm showings at 7 California theaters.</p>
+      <h2>Seat Scout</h2>
+      <p class="chapter__hook">Finds the best seats still open for selected showings in California.</p>
     </div>
-    <div class="chapter__shows" data-count="1"><figure class="chapter__show"><video class="chapter__demo" src="assets/demos/seat-phone.mp4" poster="assets/previews/seat-phone.webp" width="390" height="844" muted loop playsinline preload="none" aria-label="seat-scout on a phone during its September 2026 run: open-seat counts per theater, then a theater&#x27;s best bets as Admit One ticket stubs."></video><button type="button" class="chapter__pause" aria-pressed="false" aria-label="Pause clip" hidden><span aria-hidden="true"></span></button></figure></div>
+    <div class="chapter__shows" data-count="1"><figure class="chapter__show"><video class="chapter__demo" src="assets/demos/seat-phone.mp4" poster="assets/previews/seat-phone.webp" width="390" height="844" muted loop playsinline preload="none" aria-label="Seat Scout on a phone during its September 2026 run: open-seat counts per theater, then a theater&#x27;s best bets as Admit One ticket stubs."></video><button type="button" class="chapter__pause" aria-pressed="false" aria-label="Pause clip" hidden><span aria-hidden="true"></span></button></figure></div>
     <div class="chapter__text">
       
       <div class="chapter__links"><a class="btn btn--use" href="https://seat-scout-tan.vercel.app">Use it</a><button type="button" class="btn chapter__how" aria-expanded="false" aria-controls="built-seat">How it&#x27;s built</button></div>
-      <div class="chapter__built" id="built-seat" hidden><p class="chapter__stack">Node.js scanner on a schedule, a static Vercel page, and a Discord bot for on-demand checks.</p><ul><li>Its September run scanned 547 showtimes; 257 still had good centre pairs. 11 run-extended alerts fired between July 20 and August 3.</li><li>The public page shows counts of good adjacent seats only, never the seat grids.</li><li>Near-term showings are re-fetched every scan. Later dates are cached for 24 to 72 hours.</li></ul></div>
+      <div class="chapter__built" id="built-seat" hidden><ul class="chapter__stack"><li>Node.js</li><li>Chrome DevTools Protocol</li><li>Discord</li><li>Vercel</li></ul><ul class="chapter__points"><li>Reads seat maps from inside a real Chrome session over the DevTools protocol.</li><li>Seats are tiered Center, Mid-back or Edge by depth and side; the front 30% of rows never count.</li><li>A run of n open seats together yields floor(n/2) pairs, each rated by its worse seat.</li><li>The public page shows counts only, sorted by distance from you. A Discord bot scans when @mentioned.</li></ul></div>
     </div>
   </section>
   <section class="chapter" id="lock" data-stop="lock" style="--hue: var(--hue-lock)">
     <div class="chapter__motif" aria-hidden="true"></div>
     <div class="chapter__head">
       <h2>Team Lock</h2>
-      <p class="chapter__hook">A fantasy football auto-battler. Build a roster, call plays against reads you can&#x27;t see, and watch it play out.</p>
+      <p class="chapter__hook">A fantasy football auto-battler. Build a roster, call plays, and lead your team to the championship.</p>
     </div>
     <div class="chapter__shows" data-count="2"><figure class="chapter__show"><img src="assets/previews/lock.webp" alt="Team Lock: the wide receiver, falling right, reaches one-handed for the ball." width="390" height="844" loading="lazy" style="object-position: 58% 30%"></figure><figure class="chapter__show"><video class="chapter__demo" src="assets/demos/lock-locked-phone.mp4" poster="assets/previews/lock-locked-phone.webp" width="390" height="844" muted loop playsinline preload="none" aria-label="Team Lock storyboard: the whole lineup lights up and links, then LOCKED IN over the roll call."></video><button type="button" class="chapter__pause" aria-pressed="false" aria-label="Pause clip" hidden><span aria-hidden="true"></span></button></figure></div>
     <div class="chapter__text">
       
       <div class="chapter__links"><span class="chapter__status">In design</span><button type="button" class="btn chapter__how" aria-expanded="false" aria-controls="built-lock">How it&#x27;s built</button></div>
-      <div class="chapter__built" id="built-lock" hidden><p class="chapter__stack">A Python paper-game simulator, a PixiJS v8 animation engine, and a ComfyUI art pipeline.</p><ul><li>Every rule is a flagged switch and a seeded play replays identically, so a balance change can be tested, not argued.</li><li>Character animation runs on damped springs and a keyframe timeline.</li></ul></div>
+      <div class="chapter__built" id="built-lock" hidden><ul class="chapter__stack"><li>Python</li><li>PixiJS</li><li>WebGL</li><li>ComfyUI</li></ul><ul class="chapter__points"><li>A Python simulator plays out each down from seeded rules that switch on and off.</li><li>The animation runs on a Spine-style 2D rigging engine built from scratch, where each drawing is cut into parts and each part is a PixiJS mesh bent every frame.</li><li>Springs give soft parts follow-through, and two-bone IK keeps planted feet on the ground.</li><li>Motion is layered pulses with smoothstep easing, not keyframes.</li><li>Character art comes from a ComfyUI pipeline.</li></ul></div>
     </div>
   </section>
   </div>
