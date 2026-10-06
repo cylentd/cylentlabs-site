@@ -23,7 +23,9 @@ TDD is the default; standards live in the `testing` skill.
 | While working | `python -m pytest -x` (stops at the first failure) |
 | Full suite | `python -m pytest` (56 tests, about 1.5 s; Node needed, else the Node tests skip) |
 | Before land | `python $HOME/.agents/skills/testing/scripts/land_gate.py` |
+| Mutation score | `python $HOME/.agents/skills/testing/scripts/mutate.py` |
 
+- **Survivors:** `mutate.py` prints each as `path:line: OP old -> new`. Record them in `docs/projects/STATUS.md` "Test backlog" until a test kills them or the line is marked `nomutate: <reason>`. No `.testing.json`: the defaults fit.
 - **Layers:** unit (`test_site.py` render, `test_lab.py` lab parse and markdown); contract (`contracts/checks.py` rejections, in both); build and golden skeleton (`test_site.py`, `test_lab.py` call `build.build*`); Node shape harness (`test_shapes.py`, `test_helix.py`, `test_field.py`, and the demos test in `test_site.py`). The `render` marker (browser) is declared in `pytest.ini` but unused: no browser test exists.
 - **Exemplars:** `tests/test_helix.py` (Node harness run once per module fixture, one behaviour per test, numbers justified in comments); `tests/test_lab.py` (pure unit tests of `core/lab`, including the negative `ValueError` cases); `tests/test_site.py` contract tests (`test_contract_rejects_*`, one broken field each).
 - **Building blocks:** JS harnesses are strings inside the test files or `tests/shapes_harness.js`; module fixtures `flick`, `stats`, `mouse` run Node once; `POST`, `COPY`, `DATA` constants in `test_lab.py` and `test_site.py`. No `conftest.py`.
