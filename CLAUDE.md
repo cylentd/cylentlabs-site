@@ -7,11 +7,27 @@ Portfolio at cylentlabs.com. One static page: a particle DNA helix in the hero, 
 | Do | Run |
 |---|---|
 | Build | `python app/build.py` (writes `dist/`) |
-| Test | `python -m pytest` (the shape test needs Node) |
-| Preview | `python -m http.server 8010 --directory dist` then `http://localhost:8010/` |
-| Land | Rebuild, commit `dist/`, then `git land`. Code lands only on David's "land it" |
+| Preview | The shared dev server, never your own: `http://localhost:8000/cylentlabs/` (main's `dist/`), `http://localhost:8000/cylentlabs-wt/<worktree>/dist/` (a worktree's) |
+| Land | Run the Testing gate, rebuild, commit `dist/`, then `git land`. Code lands only on David's "land it" |
 
 David opens pages himself. Never open a browser for him.
+
+## Testing
+
+TDD is the default; standards live in the `testing` skill.
+
+| Do | Run |
+|---|---|
+| One test | `python -m pytest tests/test_helix.py::test_a_page_scroll_spins_nothing` |
+| One file | `python -m pytest tests/test_helix.py` |
+| While working | `python -m pytest -x` (stops at the first failure) |
+| Full suite | `python -m pytest` (56 tests, about 1.5 s; Node needed, else the Node tests skip) |
+| Before land | `python $HOME/.agents/skills/testing/scripts/land_gate.py` |
+
+- **Layers:** unit (`test_site.py` render, `test_lab.py` lab parse and markdown); contract (`contracts/checks.py` rejections, in both); build and golden skeleton (`test_site.py`, `test_lab.py` call `build.build*`); Node shape harness (`test_shapes.py`, `test_helix.py`, `test_field.py`, and the demos test in `test_site.py`). The `render` marker (browser) is declared in `pytest.ini` but unused: no browser test exists.
+- **Exemplars:** `tests/test_helix.py` (Node harness run once per module fixture, one behaviour per test, numbers justified in comments); `tests/test_lab.py` (pure unit tests of `core/lab`, including the negative `ValueError` cases); `tests/test_site.py` contract tests (`test_contract_rejects_*`, one broken field each).
+- **Building blocks:** JS harnesses are strings inside the test files or `tests/shapes_harness.js`; module fixtures `flick`, `stats`, `mouse` run Node once; `POST`, `COPY`, `DATA` constants in `test_lab.py` and `test_site.py`. No `conftest.py`.
+- **Protected:** `dist/` (generated), `data/projects.json` and `design/src/content.json` (the tests read them as the oracle), `tests/shapes_harness.js`, and every existing test: change one only when its behaviour is meant to change, with the diff reviewed.
 
 ## Deploy
 

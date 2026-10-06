@@ -7,7 +7,8 @@ No framework. A Python build joins structure, style, behaviour, copy and data in
 ```
 python app/build.py      # writes dist/
 python -m pytest         # unit, contract, page and shape tests
-python -m http.server 8010 --directory dist
 ```
+
+Preview on the shared dev server at `http://localhost:8000/cylentlabs/`; never start a server of your own.
 
 `CLAUDE.md` has the layout and the rules.
