@@ -52,5 +52,6 @@ Vercel serves the committed `dist/` as a static site (framework Other, no build 
 - **Numbers are results or nothing.** A headline number must be a real, dated result from the project's own data. Builder stats go under How it's built.
 - **Team Lock art:** optimized webp or clip copies only; originals stay outside the repo. Characters are cosmetic role avatars, so cut-in art never carries a real player's name; names appear only on role badges, as fantasy data. Keep the avatars generic: no real player's face, team marks, or matching jersey number.
 - Phone clips are recorded at 390x844 and must show real, current-looking content; say in the commit when a clip is edited (sped up, items hidden, snapshot data).
+- **Keep touch playful** (David, 2026-10-03). He loves spinning the helix and swiping the particles on his phone. A calmer-motion change once removed touch swipe waves and helix drag-spin, and he asked for them back within minutes. Calm motion by reducing size, speed or frequency, never by deleting a gesture. Ask before removing any gesture.
 - Vercel Hobby is non-commercial. Upgrade before taking client work.
 - Verify at 360px first. Reduced motion gets still frames.
